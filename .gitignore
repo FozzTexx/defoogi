@@ -1,0 +1,61 @@
+# Visual Studio Code workspace files
+*.code-workspace
+**/.vscode
+.vs/
+
+# PlatformIO build directory
+**/.pio
+
+# PlatformIO project settings
+platformio.ini
+platformio.local*.ini
+platformio-generated.ini
+platformio-release.ini
+
+# PlatformIO monitor logs
+platformio-device-monitor-*.log
+
+# ESP-IDF SDK configuration file
+sdkconfig.*
+
+include/ssid.h
+/*.log
+sdkconfig.fujinet-v1
+include/version.h
+build/CMakeCache.txt
+build/*
+!build/.gitkeep
+out/*
+
+# ignore generated WebUI files
+data/BUILD_*
+include/version.h
+test/rmt_copy.cpp
+test/rmt_nec_example.cpp
+test/rmt_tx_example.cpp
+dependencies.lock
+
+# Ignore packed firmware files
+firmware/*
+
+# Build artifacts
+CMakeSettings.json
+
+.cache/
+
+build-results.txt
+platformio.ini-E
+platformio.iniwow
+
+# for external library source code
+.external/
+
+data/webui/device_specific/BUILD_ATARI/fnconfig.ini
+
+# ignore any releases downloaded via fujinet_firware_uploader
+fujinet_releases/*
+
+*~
+*.orig
+*.rej
+defoogi

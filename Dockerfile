@@ -1,0 +1,94 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM debian:latest
+LABEL maintainer fozztexx@fozztexx.com
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    flex \
+    git \
+    sudo \
+    unzip \
+    wget \
+    yacc \
+    ;
+  rm -rf /var/lib/apt/lists/*
+EOF
+
+# Install cc65
+RUN <<EOF
+  set -e
+  cd /tmp
+  git clone https://github.com/cc65/cc65.git
+  cd cc65
+  export PREFIX=/usr/local
+  make
+  make install
+  cd /tmp
+  rm -rf cc65*
+EOF
+
+# Install LWTOOLS for CMOC
+ARG LWTOOLS_VERSION
+RUN <<EOF
+  set -e
+  cd /tmp
+  wget http://www.lwtools.ca/releases/lwtools/lwtools-${LWTOOLS_VERSION}.tar.gz
+  tar -xf lwtools-${LWTOOLS_VERSION}.tar.gz
+  cd lwtools-${LWTOOLS_VERSION}
+  make
+  make install
+  cd /tmp
+  rm -rf lwtools*
+EOF
+
+# Install CMOC
+ARG CMOC_VERSION
+RUN <<EOF
+  set -e
+  cd /tmp
+  wget http://gvlsywt.cluster051.hosting.ovh.net/dev/cmoc-${CMOC_VERSION}.tar.gz
+  tar -xf cmoc-${CMOC_VERSION}.tar.gz
+  cd cmoc-${CMOC_VERSION}
+  ./configure
+  make
+  make install
+  cd /tmp
+  rm -rf cmoc*
+EOF
+
+# Install OpenWatcom
+ENV WATCOM=/opt/watcom
+ENV INCLUDE=${WATCOM}/h
+ENV PATH=${PATH}:${WATCOM}/binl
+
+ARG OW2_RELEASE_VERSION=2025-03-01-Build
+ARG OW2_INSTALLER=open-watcom-2_0-c-linux-x64
+
+ADD https://github.com/open-watcom/open-watcom-v2/releases/download/${OW2_RELEASE_VERSION}/${OW2_INSTALLER} /tmp
+
+RUN <<EOF
+  set -e
+  cd /tmp
+  chmod +x ${OW2_INSTALLER}
+  TERM=vt100 script -c "./${OW2_INSTALLER} -i -dDstDir=${WATCOM} -dFullInstall=1" /dev/null
+  rm ${OW2_INSTALLER}
+  echo "#include <stdio.h>\nvoid main() { printf(\"Hello Watcom!\\\n\"); }" > hello.c
+  wcc -0 hello.c
+  wlink system dos name hello.exe file hello.o
+EOF
+
+ARG WSUSER=wario
+RUN set -e \
+    ; useradd -s /bin/bash -m ${WSUSER} \
+    ; echo "${WSUSER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    ;
+                        
+COPY cntnr-init /usr/local/bin/
+ENTRYPOINT ["/usr/local/bin/cntnr-init"]
