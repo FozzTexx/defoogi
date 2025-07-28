@@ -84,11 +84,36 @@ RUN <<EOF
   wlink system dos name hello.exe file hello.o
 EOF
 
+# Install PlatformIO
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    pipx \
+    ;
+  rm -rf /var/lib/apt/lists/*
+  PIPX_HOME=/usr/local/pipx PIPX_BIN_DIR=/usr/local/bin pipx install platformio
+EOF
+ENV PLATFORMIO_CORE_DIR=/workspace/.platformio
+
+# Requirements for building FujiNet LWM
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    cmake \
+    libexpat-dev \
+    libmbedtls-dev \
+    ;
+  rm -rf /var/lib/apt/lists/*
+  PIPX_HOME=/usr/local/pipx PIPX_BIN_DIR=/usr/local/bin pipx install abimap
+EOF
+
 ARG WSUSER=wario
 RUN set -e \
     ; useradd -s /bin/bash -m ${WSUSER} \
     ; echo "${WSUSER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     ;
-                        
+
 COPY cntnr-init /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/cntnr-init"]
