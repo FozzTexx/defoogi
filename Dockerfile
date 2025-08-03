@@ -109,6 +109,54 @@ RUN <<EOF
   PIPX_HOME=/usr/local/pipx PIPX_BIN_DIR=/usr/local/bin pipx install abimap
 EOF
 
+# Install Mad-Assembler "mads"
+RUN <<EOF
+  set -e
+  cd /tmp
+  git clone https://github.com/tebe6502/Mad-Assembler.git
+  cp Mad-Assembler/bin/linux_x86_64/mads /usr/local/bin
+  rm -rf Mad-Assembler.git
+EOF
+
+# Install atasm to build dir2atr
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    libz-dev \
+    ;
+  rm -rf /var/lib/apt/lists/*
+
+  cd /tmp
+  git clone https://github.com/CycoPH/atasm.git
+  cd atasm/src
+  make
+  mkdir -p /usr/local/doc/atasm
+  make install
+  cd /tmp
+  rm -rf atasm
+EOF
+
+# Install dir2atr
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    libncurses5-dev \
+    ;
+  rm -rf /var/lib/apt/lists/*
+
+  cd /tmp
+  git clone https://github.com/HiassofT/AtariSIO.git
+  cd AtariSIO
+  make tools
+  make tools-install
+  cd /tmp
+  rm -rf AtariSIO
+EOF
+
 ARG WSUSER=wario
 RUN set -e \
     ; useradd -s /bin/bash -m ${WSUSER} \
