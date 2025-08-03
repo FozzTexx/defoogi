@@ -1,9 +1,9 @@
 # -*- mode: Fundamental; indent-tabs-mode: nil -*-
 
 FROM debian:latest
-LABEL maintainer fozztexx@fozztexx.com
+LABEL maintainer=fozztexx@fozztexx.com
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN <<EOF
   set -e

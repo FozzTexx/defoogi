@@ -41,7 +41,7 @@ if [ "$DO_SHELL" = 'user' ] ; then
     cd "${HOSTDIR}"
     if [ $# -gt 0 ] ; then
 	echo "Starting shell with command: $@"
-	sudo -u ${WSUSER} -E -H -s $@
+	sudo -u ${WSUSER} -E --preserve-env=PATH -H -s env $@
     else
 	echo "Starting shell"
 	su ${WSUSER}
@@ -57,7 +57,7 @@ elif [ "$DO_SHELL" = 'super' ] ; then
 else
     if [ $# -gt 0 ] ; then
 	cd "${HOSTDIR}"
-	sudo -u ${WSUSER} -E -H $@
+	sudo -u ${WSUSER} -E --preserve-env=PATH -H env $@
     else
 	su ${WSUSER}
     fi
