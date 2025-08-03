@@ -3,6 +3,7 @@ VERSION=1.0
 LWTOOLS_VERSION=4.24
 CMOC_VERSION=0.1.90
 WSUSER=wario
+PREFIX=/usr/local
 
 docker-build: Dockerfile $(IMAGE)
 	env BUILDKIT_PROGRESS=plain \
@@ -14,6 +15,11 @@ docker-build: Dockerfile $(IMAGE)
 
 $(IMAGE):
 	ln -s start $(IMAGE)
+
+install: $(PREFIX)/bin/$(IMAGE)
+
+$(PREFIX)/bin/$(IMAGE): start
+	cp start $(PREFIX)/bin/$(IMAGE)
 
 # To force a complete clean build, do:
 #   make rebuild
