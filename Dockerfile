@@ -93,6 +93,7 @@ RUN <<EOF
   echo "#include <stdio.h>\nvoid main() { printf(\"Hello Watcom!\\\n\"); }" > hello.c
   wcc -0 hello.c
   wlink system dos name hello.exe file hello.o
+  rm -f hello.o hello.c hello.exe
 EOF
 
 # Install PlatformIO
@@ -126,7 +127,7 @@ RUN <<EOF
   cd /tmp
   git clone https://github.com/tebe6502/Mad-Assembler.git
   cp Mad-Assembler/bin/linux_x86_64/mads /usr/local/bin
-  rm -rf Mad-Assembler.git
+  rm -rf Mad-Assembler
 EOF
 
 # Install atasm to build dir2atr
@@ -166,6 +167,16 @@ RUN <<EOF
   make tools-install
   cd /tmp
   rm -rf AtariSIO
+EOF
+
+# Install java for AppleCommander
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    default-jdk \
+    ;
+  rm -rf /var/lib/apt/lists/*
 EOF
 
 ARG WSUSER=wario
