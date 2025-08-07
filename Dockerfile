@@ -169,14 +169,27 @@ RUN <<EOF
   rm -rf AtariSIO
 EOF
 
-# Install java for AppleCommander
+# Install AppleCommander
+ARG AC_VER=1.10.1
 RUN <<EOF
   set -e
+
   apt-get update
   apt-get install -y --no-install-recommends \
     default-jdk \
     ;
   rm -rf /var/lib/apt/lists/*
+
+  cd /usr/local/bin
+  AC_URL=https://github.com/AppleCommander/AppleCommander/releases/download/${AC_VER}
+  AC_JAR=AppleCommander-ac-${AC_VER}.jar
+  wget ${AC_URL}/${AC_JAR}
+  cat >ac <<ACEOF
+#!/bin/sh
+exec java -jar "\$(dirname \$0)"/--ACJAR-- \$@
+ACEOF
+  sed -i -e "s/--ACJAR--/${AC_JAR}/" ac
+  chmod +x ac
 EOF
 
 ARG WSUSER=wario
