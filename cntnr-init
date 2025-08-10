@@ -17,8 +17,21 @@ if [ -d "${WORKSPACE}" ] ; then
     if [ -n "${HOSTDIR}" ] ; then
 	mkdir -p "${HOSTDIR}"
 	mount --bind "${WORKSPACE}" "${HOSTDIR}"
+	cd "${HOSTDIR}"
+    else
 	cd "${WORKSPACE}"
     fi
+else
+    echo '########## WARNING ##########'
+    echo No "${WORKSPACE}" directory found. When running this container you
+    echo should pass in your working directory with the -v flag and also
+    echo pass in the HOSTDIR environment variable.
+    echo
+    echo '  --privileged -v "${PWD}:'${WORKSPACE}'" -e "HOSTDIR=${PWD}"'
+    echo
+    echo 'Another option is to use the `start` script that is included'
+    echo 'with this repo.'
+    echo
 fi
     
 IFS=
