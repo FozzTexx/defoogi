@@ -193,6 +193,18 @@ ACEOF
   chmod +x ac
 EOF
 
+# Install 1541 tools
+RUN <<EOF
+  set -e
+  cd /tmp
+  git clone https://bitbucket.org/ptv_claus/cc1541.git
+  cd cc1541
+  make
+  make install
+  cd /tmp
+  rm -rf cc1541
+EOF
+
 ARG WSUSER=wario
 RUN set -e \
     ; useradd -s /bin/bash -m ${WSUSER} \
