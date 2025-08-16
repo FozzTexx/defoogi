@@ -70,7 +70,7 @@ RUN <<EOF
   cd /tmp
   git clone https://github.com/n6il/toolshed.git
   cd toolshed
-  make -C build/unix install
+  make -C build/unix APPS=decb install
   cd /tmp
   rm -rf toolshed
 EOF

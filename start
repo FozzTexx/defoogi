@@ -8,6 +8,14 @@ if [ $# = 0 ] ; then
     exit 1
 fi
 
+DOCKER_PREFIX="${DOCKER_PREFIX:-fozztexx}"
+
+if [[ "${IMAGE}" != */* ]]; then
+    if ! docker image inspect "${IMAGE}" >/dev/null 2>&1 ; then
+	IMAGE="${DOCKER_PREFIX}/${IMAGE}"
+    fi
+fi
+
 # The yocto/windriver scripts will save the working directory
 # but aren't smart enough to resolve all symlinks
 export PWD=`pwd -P`
