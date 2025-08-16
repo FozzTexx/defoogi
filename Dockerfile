@@ -1,6 +1,6 @@
 # -*- mode: Fundamental; indent-tabs-mode: nil -*-
 
-FROM debian:latest
+FROM debian:12.10
 LABEL maintainer=fozztexx@fozztexx.com
 
 ENV DEBIAN_FRONTEND=noninteractive
