@@ -3,8 +3,26 @@ APPDIR=/workspace
 IMAGE=$(basename $0):latest
 WSUSER=${WSUSER:-wario}
 
+# Detect operating system
+detect_os() {
+    case "$(uname -s)" in
+        Linux*)     echo "linux";;
+        Darwin*)    echo "macos";;
+        CYGWIN*|MINGW*|MSYS*) echo "windows";;
+        *)          echo "unknown";;
+    esac
+}
+
+OS=$(detect_os)
+
 if [ $# = 0 ] ; then
     echo Please specify what to start
+    exit 1
+fi
+
+# Check for Windows and show coming soon message
+if [ "$OS" = "windows" ]; then
+    echo "Windows support coming soon!"
     exit 1
 fi
 
@@ -23,12 +41,23 @@ export PWD=`pwd -P`
 ARGS=""
 
 DCKARGS="--privileged --cap-add=SYS_ADMIN --cap-add SYS_PTRACE"
-# Always pass X11
-DCKARGS="${DCKARGS} -e DISPLAY -v ${HOME}/.Xauthority:/home/${WSUSER}/.Xauthority --net=host"
+
+# Platform-specific Docker arguments
+if [ "$OS" = "macos" ]; then
+    # For macOS, force amd64 platform and use different X11 setup
+    DCKARGS="${DCKARGS} --platform linux/amd64"
+    # macOS X11 forwarding (requires XQuartz)
+    if [ -n "$DISPLAY" ]; then
+        DCKARGS="${DCKARGS} -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix --net=host"
+    fi
+elif [ "$OS" = "linux" ]; then
+    # Linux X11 forwarding
+    DCKARGS="${DCKARGS} -e DISPLAY -v ${HOME}/.Xauthority:/home/${WSUSER}/.Xauthority --net=host"
+fi
 
 DAEMON=0
 
-while [ $# -gt 0 -a `expr substr "${1:-empty}" 1 2` = "--" ] ; do
+while [ $# -gt 0 ] && [ "${1:-empty}" != "${1#--}" ] ; do
     case "$1" in
 	--shell)
 	    ARGS="${ARGS} $1"
@@ -54,13 +83,28 @@ if [[ $DAEMON = 0 ]] ; then
     fi
 fi
 
-# if [ $# = 0 ] ; then
-#     ARGS="${ARGS} --shell"
-# fi
+# Platform-specific network interface detection
+get_network_info() {
+    if [ "$OS" = "linux" ]; then
+        IFACE=$(ip route show default | awk '/default/ {print $5}')
+        MACADDR=$(cat /sys/class/net/$IFACE/address)
+    elif [ "$OS" = "macos" ]; then
+        # Get default route interface on macOS
+        IFACE=$(route -n get default | grep interface | awk '{print $2}')
+        if [ -n "$IFACE" ]; then
+            MACADDR=$(ifconfig $IFACE | grep ether | awk '{print $2}')
+        else
+            # Fallback: try to get any active interface
+            IFACE=$(ifconfig | grep -E '^[a-z]' | grep -v lo0 | head -1 | cut -d: -f1)
+            MACADDR=$(ifconfig $IFACE | grep ether | awk '{print $2}')
+        fi
+    fi
+}
 
-IFACE=$(ip route show default | awk '/default/ {print $5}')
-MACADDR=$(cat /sys/class/net/$IFACE/address)
-DCKARGS="${DCKARGS} -e MACADDR=${MACADDR}"
+get_network_info
+if [ -n "$MACADDR" ]; then
+    DCKARGS="${DCKARGS} -e MACADDR=${MACADDR}"
+fi
 
 HOSTDIR="${PWD}"
 DCKARGS=($DCKARGS)
