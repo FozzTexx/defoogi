@@ -14,6 +14,7 @@ RUN <<EOF
     curl \
     flex \
     git \
+    less \
     sudo \
     unzip \
     wget \
@@ -76,25 +77,37 @@ RUN <<EOF
 EOF
 
 # Install OpenWatcom
+ARG OW2_VERSION
 ENV WATCOM=/opt/watcom
 ENV INCLUDE=${WATCOM}/h
 ENV PATH=${PATH}:${WATCOM}/binl
 
-ARG OW2_RELEASE_VERSION=2025-03-01-Build
-ARG OW2_INSTALLER=open-watcom-2_0-c-linux-x64
-
-ADD https://github.com/open-watcom/open-watcom-v2/releases/download/${OW2_RELEASE_VERSION}/${OW2_INSTALLER} /tmp
+# ARG OW2_RELEASE_VERSION=2025-03-01-Build
+# ARG OW2_INSTALLER=open-watcom-2_0-c-linux-x64
+# ADD https://github.com/open-watcom/open-watcom-v2/releases/download/${OW2_RELEASE_VERSION}/${OW2_INSTALLER} /tmp
 
 RUN <<EOF
   set -e
   cd /tmp
-  chmod +x ${OW2_INSTALLER}
-  TERM=vt100 script -c "./${OW2_INSTALLER} -i -dDstDir=${WATCOM} -dFullInstall=1" /dev/null
-  rm ${OW2_INSTALLER}
-  echo "#include <stdio.h>\nvoid main() { printf(\"Hello Watcom!\\\n\"); }" > hello.c
+  REPO=open-watcom-v2
+  git clone -b ${OW2_VERSION} https://github.com/open-watcom/${REPO}.git
+  cd ${REPO}
+  . ./setvars.sh
+  export OWDOCBUILD=0 OWNOWGML=1
+  ./build.sh
+  cd bld
+  builder rel
+  cd ..
+  mkdir -p ${WATCOM}
+  cp -R rel/* ${WATCOM}/.
+
+  printf "#include <stdio.h>\nvoid main() { printf(\"Hello Watcom!\\\n\"); }\n" > hello.c
   wcc -0 hello.c
   wlink system dos name hello.exe file hello.o
   rm -f hello.o hello.c hello.exe
+
+  cd /tmp
+  rm -rf ${REPO}
 EOF
 
 # Install PlatformIO

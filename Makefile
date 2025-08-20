@@ -1,16 +1,19 @@
 IMAGE=defoogi
-VERSION=1.2
+VERSION=1.3
 LWTOOLS_VERSION=4.24
 CMOC_VERSION=0.1.93
+OW2_VERSION=2025-08-02-Build
 WSUSER=wario
 PREFIX=/usr/local
 COMMAND=$(notdir $(IMAGE))
 
 docker-build: Dockerfile $(COMMAND)
 	env BUILDKIT_PROGRESS=plain \
-	  docker build $(REBUILDFLAGS) -f Dockerfile \
+	  docker $(BUILDX) build $(REBUILDFLAGS) -f Dockerfile \
+	    $(PLATFORMS) \
 	    --build-arg LWTOOLS_VERSION=$(LWTOOLS_VERSION) \
 	    --build-arg CMOC_VERSION=$(CMOC_VERSION) \
+	    --build-arg OW2_VERSION=$(OW2_VERSION) \
 	    --build-arg WSUSER=$(WSUSER) \
 	    --rm -t $(IMAGE):$(VERSION) -t $(IMAGE):latest .
 
@@ -21,6 +24,9 @@ install: $(PREFIX)/bin/$(COMMAND)
 
 $(PREFIX)/bin/$(COMMAND): start
 	cp start $(PREFIX)/bin/$(COMMAND)
+
+multi-arch:
+	make BUILDX=buildx PLATFORMS="--platform linux/amd64,linux/arm64,linux/arm/v7"
 
 # To force a complete clean build, do:
 #   make rebuild

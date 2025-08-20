@@ -18,7 +18,7 @@ fi
 
 # The yocto/windriver scripts will save the working directory
 # but aren't smart enough to resolve all symlinks
-export PWD=`pwd -P`
+export PWD=$(pwd -P)
 
 ARGS=""
 
@@ -28,7 +28,12 @@ DCKARGS="${DCKARGS} -e DISPLAY -v ${HOME}/.Xauthority:/home/${WSUSER}/.Xauthorit
 
 DAEMON=0
 
-while [ $# -gt 0 -a `expr substr "${1:-empty}" 1 2` = "--" ] ; do
+while [ $# -gt 0 ]; do
+    first2=$(expr "$1" : '\(..\)')
+    if [ "$first2" != "--" ]; then
+	break
+    fi
+
     case "$1" in
 	--shell)
 	    ARGS="${ARGS} $1"
@@ -57,10 +62,6 @@ fi
 # if [ $# = 0 ] ; then
 #     ARGS="${ARGS} --shell"
 # fi
-
-IFACE=$(ip route show default | awk '/default/ {print $5}')
-MACADDR=$(cat /sys/class/net/$IFACE/address)
-DCKARGS="${DCKARGS} -e MACADDR=${MACADDR}"
 
 HOSTDIR="${PWD}"
 DCKARGS=($DCKARGS)
