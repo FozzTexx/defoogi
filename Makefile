@@ -6,11 +6,13 @@ OW2_VERSION=2025-08-02-Build
 WSUSER=wario
 PREFIX=/usr/local
 COMMAND=$(notdir $(IMAGE))
+#MULTI_ARCH=linux/amd64,linux/arm64,linux/arm/v7
+MULTI_ARCH=linux/amd64,linux/arm64
 
 docker-build: Dockerfile $(COMMAND)
 	env BUILDKIT_PROGRESS=plain \
 	  docker $(BUILDX) build $(REBUILDFLAGS) -f Dockerfile \
-	    $(PLATFORMS) \
+	    $(PLATFORMS) $(EXTRA_ARGS) \
 	    --build-arg LWTOOLS_VERSION=$(LWTOOLS_VERSION) \
 	    --build-arg CMOC_VERSION=$(CMOC_VERSION) \
 	    --build-arg OW2_VERSION=$(OW2_VERSION) \
@@ -26,7 +28,7 @@ $(PREFIX)/bin/$(COMMAND): start
 	cp start $(PREFIX)/bin/$(COMMAND)
 
 multi-arch:
-	make BUILDX=buildx PLATFORMS="--platform linux/amd64,linux/arm64,linux/arm/v7"
+	make BUILDX=buildx PLATFORMS="--platform $(MULTI_ARCH)"
 
 # To force a complete clean build, do:
 #   make rebuild
