@@ -2,24 +2,31 @@
 WSUSER=${WSUSER:-wario}
 WORKSPACE=${WORKSPACE:-/workspace}
 
-if [ -d "${WORKSPACE}" ] ; then
-    WSUID=$(stat -c '%u' "${WORKSPACE}")
-    WSGID=$(stat -c '%g' "${WORKSPACE}")
-    if [ ${WSGID} != ${WSUSER} ] ; then
-	groupmod -g ${WSGID} ${WSUSER}
-    fi
-    if [ ${WSGID} != ${WSUSER} -o ${WSUID} != ${WSUSER} ] ; then
-	usermod -u ${WSUID} -g ${WSGID} ${WSUSER}
-    fi
-
-    # Create a bind mount to the same location of the host dir
-
-    if [ -n "${HOSTDIR}" ] ; then
-	mkdir -p "${HOSTDIR}"
-	mount --bind "${WORKSPACE}" "${HOSTDIR}"
-	cd "${HOSTDIR}"
+if [ -n "${WORKSPACE}" -a -d "${WORKSPACE}" ] ; then
+    CUR_WSUID=$(id -u ${WSUSER})
+    WSUG=$(su ${WSUSER} -s /bin/sh -c "stat -c '%u:%g' ${WORKSPACE}")
+    WSUID=${WSUG%%:*}
+    WSGID=${WSUG#*:}
+    if [ ${WSUID} -lt 1000 -o ${WSGID} -lt 1000 ] ; then
+        echo ${WORKSPACE} is owned by system user
+        echo not attempting to match uid:gid
     else
-	cd "${WORKSPACE}"
+        if [ ${WSGID} != ${CUR_WSUID} ] ; then
+            groupmod -g ${WSGID} ${WSUSER}
+        fi
+        if [ ${WSGID} != ${CUR_WSUID} -o ${WSUID} != ${CUR_WSUID} ] ; then
+            usermod -u ${WSUID} -g ${WSGID} ${WSUSER}
+        fi
+
+        # Create a bind mount to the same location of the host dir
+
+        if [ -n "${HOSTDIR}" ] ; then
+            mkdir -p "${HOSTDIR}"
+            mount --bind "${WORKSPACE}" "${HOSTDIR}"
+            cd "${HOSTDIR}"
+        else
+            cd "${WORKSPACE}"
+        fi
     fi
 else
     echo '########## WARNING ##########'
@@ -37,14 +44,14 @@ fi
 IFS=
 while [ $# -gt 0 -a x$(expr substr "${1:-empty}" 1 2) = "x--" ] ; do
     case "$1" in
-	--shell)
-	    DO_SHELL=user
-	    shift
-	    ;;
-	--super-shell)
-	    DO_SHELL=super
-	    shift
-	    ;;
+        --shell)
+            DO_SHELL=user
+            shift
+            ;;
+        --super-shell)
+            DO_SHELL=super
+            shift
+            ;;
     esac
 done
 
@@ -53,26 +60,26 @@ export HISTCONTROL=ignoreboth:erasedups
 if [ "$DO_SHELL" = 'user' ] ; then
     cd "${HOSTDIR}"
     if [ $# -gt 0 ] ; then
-	echo "Starting shell with command: $@"
-	sudo -u ${WSUSER} -E --preserve-env=PATH -H -s env $@
+        echo "Starting shell with command: $@"
+        sudo -u ${WSUSER} -E --preserve-env=PATH -H -s env $@
     else
-	echo "Starting shell"
-	su ${WSUSER}
+        echo "Starting shell"
+        su ${WSUSER}
     fi
 elif [ "$DO_SHELL" = 'super' ] ; then
     if [ $# -gt 0 ] ; then
-#	echo "Starting super shell with command: $@"
-	/bin/bash -c "$@"
+#       echo "Starting super shell with command: $@"
+        /bin/bash -c "$@"
     else
-#	echo "Starting super shell"
-	/bin/bash
+#       echo "Starting super shell"
+        /bin/bash
     fi
 else
     if [ $# -gt 0 ] ; then
-	cd "${HOSTDIR}"
-	sudo -u ${WSUSER} -E --preserve-env=PATH -H env $@
+        cd "${HOSTDIR}"
+        sudo -u ${WSUSER} -E --preserve-env=PATH -H env $@
     else
-	su ${WSUSER}
+        su ${WSUSER}
     fi
 fi
 STATUS=$?

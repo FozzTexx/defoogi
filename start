@@ -11,8 +11,8 @@ fi
 DOCKER_PREFIX="${DOCKER_PREFIX:-fozztexx}"
 
 if [[ "${IMAGE}" != */* ]]; then
-    if ! docker image inspect "${IMAGE}" >/dev/null 2>&1 ; then
-	IMAGE="${DOCKER_PREFIX}/${IMAGE}"
+    if ! docker inspect "${IMAGE}" >/dev/null 2>&1 ; then
+        IMAGE="${DOCKER_PREFIX}/${IMAGE}"
     fi
 fi
 
@@ -31,23 +31,23 @@ DAEMON=0
 while [ $# -gt 0 ]; do
     first2=$(expr "$1" : '\(..\)')
     if [ "$first2" != "--" ]; then
-	break
+        break
     fi
 
     case "$1" in
-	--shell)
-	    ARGS="${ARGS} $1"
-	    shift
-	    ;;
-	--super-shell)
-	    ARGS="${ARGS} $1"
-	    shift
-	    ;;
-	--daemon)
-	    DCKARGS="${DCKARGS} -d"
-	    DAEMON=1
-	    shift
-	    ;;
+        --shell)
+            ARGS="${ARGS} $1"
+            shift
+            ;;
+        --super-shell)
+            ARGS="${ARGS} $1"
+            shift
+            ;;
+        --daemon)
+            DCKARGS="${DCKARGS} -d"
+            DAEMON=1
+            shift
+            ;;
     esac
 done
 
@@ -55,7 +55,7 @@ done
 if [[ $DAEMON = 0 ]] ; then
     DCKARGS="${DCKARGS} --rm"
     if [[ -t 1 ]] ; then
-	DCKARGS="${DCKARGS} -it"
+        DCKARGS="${DCKARGS} -it"
     fi
 fi
 
