@@ -1,27 +1,18 @@
 # -*- mode: Fundamental; indent-tabs-mode: nil -*-
 
 FROM tooling AS cmoc
-
-ARG LWTOOLS_VERSION
-ARG PKG=cmoc
-WORKDIR /${PKG}-build
-
 ENV DEBIAN_FRONTEND=noninteractive
-RUN <<EOF
-  set -e
-  apt-get update
-  apt-get install -y --no-install-recommends \
-    flex \
-    wget \
-    yacc \
-    ;
-EOF
+
+ARG PKG=cmoc
+
+WORKDIR /${PKG}-build
 
 RUN rm -rf /usr/local/*
 
+ARG LWTOOLS_VERSION
+ADD http://www.lwtools.ca/releases/lwtools/lwtools-${LWTOOLS_VERSION}.tar.gz .
 RUN <<EOF
   set -e
-  wget http://www.lwtools.ca/releases/lwtools/lwtools-${LWTOOLS_VERSION}.tar.gz
   tar -xf lwtools-${LWTOOLS_VERSION}.tar.gz
   cd lwtools-${LWTOOLS_VERSION}
   make
@@ -29,9 +20,15 @@ RUN <<EOF
 EOF
 
 ARG CMOC_VERSION
+ADD http://gvlsywt.cluster051.hosting.ovh.net/dev/cmoc-${CMOC_VERSION}.tar.gz .
 RUN <<EOF
   set -e
-  wget http://gvlsywt.cluster051.hosting.ovh.net/dev/cmoc-${CMOC_VERSION}.tar.gz
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    flex \
+    yacc \
+    ;
+
   tar -xf cmoc-${CMOC_VERSION}.tar.gz
   cd cmoc-${CMOC_VERSION}
   ./configure

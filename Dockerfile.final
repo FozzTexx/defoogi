@@ -6,22 +6,25 @@
 FROM tooling
 LABEL maintainer=fozztexx@fozztexx.com
 
-# Install AppleCommander
+###############################################################
+# This is where we install things that don't require compiling
+
+# AppleCommander
 ARG AC_VER
+ARG AC_URL=https://github.com/AppleCommander/AppleCommander/releases/download/${AC_VER}
+ARG AC_JAR=AppleCommander-ac-${AC_VER}.jar
+ADD ${AC_URL}/${AC_JAR} /usr/local/bin/
+
 RUN <<EOF
   set -e
 
   apt-get update
   apt-get install -y --no-install-recommends \
     default-jdk \
-    wget \
     ;
   rm -rf /var/lib/apt/lists/*
 
   cd /usr/local/bin
-  AC_URL=https://github.com/AppleCommander/AppleCommander/releases/download/${AC_VER}
-  AC_JAR=AppleCommander-ac-${AC_VER}.jar
-  wget ${AC_URL}/${AC_JAR}
   cat >ac <<ACEOF
 #!/bin/sh
 exec java -jar "\$(dirname \$0)"/--ACJAR-- \$@
@@ -30,6 +33,7 @@ ACEOF
   chmod +x ac
 EOF
 
+# PlatformIO
 RUN <<EOF
   set -e
   apt-get update
@@ -40,6 +44,7 @@ RUN <<EOF
     pipx \
     ;
   rm -rf /var/lib/apt/lists/*
+
   export PIPX_HOME=/usr/local/pipx PIPX_BIN_DIR=/usr/local/bin
   pipx install abimap
   pipx install platformio
@@ -56,6 +61,21 @@ RUN <<EOF
   set -e
   apt-get update
   apt-get install -y --no-install-recommends /tmp/packages/*.deb
+EOF
+
+# Essential tools
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    curl \
+    less \
+    sudo \
+    unzip \
+    wget \
+    ;
+  rm -rf /var/lib/apt/lists/*
 EOF
 
 ENV WATCOM=/opt/watcom

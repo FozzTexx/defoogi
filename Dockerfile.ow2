@@ -40,15 +40,11 @@ EOF
 RUN <<EOF
   set -e
 
-  apt-get install -y --no-install-recommends \
-    rsync \
-    ;
-
   PKG_ROOT="/tmp/${PKG}"
   mkdir -p "${PKG_ROOT}"
   cd "${PKG_ROOT}"
   mkdir -p "./${WATCOM}"
-  rsync -a "${WATCOM}/." "./${WATCOM}"
+  cp -R "${WATCOM}/." "./${WATCOM}"
 
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
