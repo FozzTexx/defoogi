@@ -1,0 +1,74 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+########################################
+# Final image
+
+FROM tooling
+LABEL maintainer=fozztexx@fozztexx.com
+
+# Install AppleCommander
+ARG AC_VER
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    default-jdk \
+    wget \
+    ;
+  rm -rf /var/lib/apt/lists/*
+
+  cd /usr/local/bin
+  AC_URL=https://github.com/AppleCommander/AppleCommander/releases/download/${AC_VER}
+  AC_JAR=AppleCommander-ac-${AC_VER}.jar
+  wget ${AC_URL}/${AC_JAR}
+  cat >ac <<ACEOF
+#!/bin/sh
+exec java -jar "\$(dirname \$0)"/--ACJAR-- \$@
+ACEOF
+  sed -i -e "s/--ACJAR--/${AC_JAR}/" ac
+  chmod +x ac
+EOF
+
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    cmake \
+    libexpat-dev \
+    libmbedtls-dev \
+    pipx \
+    ;
+  rm -rf /var/lib/apt/lists/*
+  export PIPX_HOME=/usr/local/pipx PIPX_BIN_DIR=/usr/local/bin
+  pipx install abimap
+  pipx install platformio
+EOF
+
+RUN mkdir -p /tmp/packages
+COPY --from=openwatcom /tmp/open-watcom-v2.deb /tmp/packages/
+COPY --from=cc65 /tmp/cc65.deb /tmp/packages/
+COPY --from=dir2atr /tmp/dir2atr.deb /tmp/packages/
+COPY --from=cc1541 /tmp/cc1541.deb /tmp/packages/
+COPY --from=cmoc /tmp/cmoc.deb /tmp/packages/
+COPY --from=mads /tmp/mads.deb /tmp/packages/
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends /tmp/packages/*.deb
+EOF
+
+ENV WATCOM=/opt/watcom
+ENV INCLUDE=${WATCOM}/h
+ENV PATH=${PATH}:${WATCOM}/binl
+
+ENV PLATFORMIO_CORE_DIR=/workspace/.platformio
+
+ARG WSUSER=wario
+RUN set -e \
+    ; useradd -s /bin/bash -m ${WSUSER} \
+    ; echo "${WSUSER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    ;
+
+COPY cntnr-init /usr/local/bin/
+ENTRYPOINT ["/usr/local/bin/cntnr-init"]

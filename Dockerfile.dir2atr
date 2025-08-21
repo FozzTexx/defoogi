@@ -1,0 +1,64 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS dir2atr
+
+ARG ATASM_VERSION
+
+RUN rm -rf /usr/local/*
+
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    libz-dev \
+    ;
+  rm -rf /var/lib/apt/lists/*
+
+  git clone -b ${ATASM_VERSION} https://github.com/CycoPH/atasm.git
+  cd atasm/src
+  make
+  mkdir -p /usr/local/bin /usr/local/man/man1 /usr/local/doc/atasm
+  make install
+EOF
+
+# For dir2atr
+ARG ATARISIO_VERSION
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    libncurses5-dev \
+    ;
+  rm -rf /var/lib/apt/lists/*
+
+  cd /tmp
+  git clone https://github.com/HiassofT/AtariSIO.git
+  cd AtariSIO
+  git checkout ${ATARISIO_VERSION}
+  make tools
+  make tools-install
+EOF
+
+# Convert installed dir2atr into a deb
+RUN <<EOF
+  set -e
+
+  PKG=dir2atr
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local/bin
+  cp /usr/local/bin/dir2atr usr/local/bin/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "1-${ATARISIO_VERSION}" >> DEBIAN/control
+  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF

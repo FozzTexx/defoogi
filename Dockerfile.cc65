@@ -5,10 +5,10 @@ FROM tooling AS cc65
 ARG CC65_VERSION
 ARG PKG=cc65
 ARG REPO_BASE=https://github.com/${PKG}
+WORKDIR /${PKG}-build
 
 RUN <<EOF
   set -e
-  cd /tmp
   git clone ${REPO_BASE}/${PKG}.git
   cd ${PKG}
   git checkout ${CC65_VERSION}
@@ -20,15 +20,11 @@ EOF
 RUN <<EOF
   set -e
 
-  apt-get install -y --no-install-recommends \
-    rsync \
-    ;
-
   PKG_ROOT="/tmp/${PKG}"
   mkdir -p "${PKG_ROOT}"
   cd "${PKG_ROOT}"
   mkdir -p usr/local
-  rsync -a /opt/${PKG}/. usr/local/.
+  cp -R /opt/${PKG}/. usr/local/.
 
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control

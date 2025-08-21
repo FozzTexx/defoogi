@@ -3,10 +3,31 @@
 FROM tooling AS mads
 
 ARG MADS_VERSION
+ARG PKG=mads
+WORKDIR /${PKG}-build
+
 RUN <<EOF
   set -e
-  cd /tmp
   git clone https://github.com/tebe6502/Mad-Assembler.git
   cp Mad-Assembler/bin/linux_x86_64/mads /usr/local/bin
-  rm -rf Mad-Assembler
+EOF
+
+RUN <<EOF
+  set -e
+
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local/bin
+  cp -R /usr/local/bin/mads usr/local/bin/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "${MADS_VERSION}" >> DEBIAN/control
+  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
 EOF

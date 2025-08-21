@@ -3,13 +3,35 @@
 FROM tooling AS cc1541
 
 ARG CC1541_VERSION
+ARG PKG=cc1541
+WORKDIR /${PKG}-build
+
+RUN rm -rf /usr/local/*
+
 RUN <<EOF
   set -e
-  cd /tmp
   git clone -b ${CC1541_VERSION} https://bitbucket.org/ptv_claus/cc1541.git
   cd cc1541
   make
   make install
-  cd /tmp
-  rm -rf cc1541
+EOF
+
+RUN <<EOF
+  set -e
+
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local/bin
+  cp -R /usr/local/. usr/local/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "${CC1541_VERSION}" >> DEBIAN/control
+  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
 EOF

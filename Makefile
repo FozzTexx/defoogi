@@ -14,17 +14,16 @@ MULTI_ARCH=linux/amd64,linux/arm64
 # versions they were originally developed with.
 VERSIONS=versions.env
 
-# Make sure head is always first and foot is always last!
+# Make sure head is always first and final is always last!
 DOCKERFILES=\
   Dockerfile.head \
-  Dockerfile.applecommander \
-  Dockerfile.atasm \
   Dockerfile.cc1541 \
   Dockerfile.cc65 \
   Dockerfile.cmoc \
+  Dockerfile.dir2atr \
   Dockerfile.mads \
   Dockerfile.ow2 \
-  Dockerfile.foot
+  Dockerfile.final
 
 docker-build: Dockerfile $(COMMAND) versions.env
 	env BUILDKIT_PROGRESS=plain \
