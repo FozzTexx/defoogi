@@ -1,0 +1,62 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+########################################
+# Open Watcom V2
+
+FROM tooling AS openwatcom
+
+# Doing the install as multiple layers because each command takes
+# *forever* and when it craps out I want to be able to get into the
+# container to investigate.
+
+ARG OW2_VERSION
+ARG PKG=open-watcom-v2
+ARG REPO_BASE=https://github.com/open-watcom
+ENV WATCOM=/opt/watcom
+ENV INCLUDE=${WATCOM}/h
+ENV PATH=${PATH}:${WATCOM}/binl
+
+WORKDIR /ow2-build
+RUN git clone -b ${OW2_VERSION} ${REPO_BASE}/${PKG}.git
+WORKDIR /ow2-build/${PKG}
+RUN . ./setvars.sh && OWDOCBUILD=0 OWNOWGML=1 ./build.sh
+RUN . ./setvars.sh && cd bld && OWDOCBUILD=0 OWNOWGML=1 builder rel
+
+RUN <<EOF
+  set -e
+  mkdir -p ${WATCOM}
+  cp -R rel/* ${WATCOM}/.
+EOF
+
+# Test to make sure OW actually works
+RUN <<EOF
+  printf "#include <stdio.h>\nvoid main() { printf(\"Hello Watcom!\\\n\"); }\n" > hello.c
+  wcc -0 hello.c
+  wlink system dos name hello.exe file hello.o
+  rm -f hello.o hello.c hello.exe
+EOF
+
+# Convert installed Open Watcom 2 into a deb
+RUN <<EOF
+  set -e
+
+  apt-get install -y --no-install-recommends \
+    rsync \
+    ;
+
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p "./${WATCOM}"
+  rsync -a "${WATCOM}/." "./${WATCOM}"
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "${OW2_VERSION}" >> DEBIAN/control
+  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF

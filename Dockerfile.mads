@@ -1,0 +1,12 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS mads
+
+ARG MADS_VERSION
+RUN <<EOF
+  set -e
+  cd /tmp
+  git clone https://github.com/tebe6502/Mad-Assembler.git
+  cp Mad-Assembler/bin/linux_x86_64/mads /usr/local/bin
+  rm -rf Mad-Assembler
+EOF

@@ -1,0 +1,44 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS atasm
+
+ARG ATASM_VERSION
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    libz-dev \
+    ;
+  rm -rf /var/lib/apt/lists/*
+
+  cd /tmp
+  git clone -b ${ATASM_VERSION} https://github.com/CycoPH/atasm.git
+  cd atasm/src
+  make
+  mkdir -p /usr/local/doc/atasm
+  make install
+  cd /tmp
+  rm -rf atasm
+EOF
+
+# For dir2atr
+ARG ATARISIO_VERSION
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    libncurses5-dev \
+    ;
+  rm -rf /var/lib/apt/lists/*
+
+  cd /tmp
+  git clone https://github.com/HiassofT/AtariSIO.git
+  cd AtariSIO
+  git checkout ${ATARISIO_VERSION}
+  make tools
+  make tools-install
+  cd /tmp
+  rm -rf AtariSIO
+EOF

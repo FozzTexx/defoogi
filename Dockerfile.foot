@@ -1,0 +1,54 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+########################################
+# Final image
+
+FROM ${BASE}
+LABEL maintainer=fozztexx@fozztexx.com
+
+RUN mkdir -p /tmp/packages
+COPY --from=openwatcom /tmp/open-watcom-v2.deb /tmp/packages/
+COPY --from=cc65 /tmp/cc65.deb /tmp/packages/
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends /tmp/packages/*.deb
+  rm -rf /var/lib/apt/lists/* /tmp/packages
+EOF
+
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    cmake \
+    libexpat-dev \
+    libmbedtls-dev \
+    ;
+  rm -rf /var/lib/apt/lists/*
+  PIPX_HOME=/usr/local/pipx PIPX_BIN_DIR=/usr/local/bin pipx install abimap
+EOF
+
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    pipx \
+    ;
+  rm -rf /var/lib/apt/lists/*
+  PIPX_HOME=/usr/local/pipx PIPX_BIN_DIR=/usr/local/bin pipx install platformio
+EOF
+
+ENV WATCOM=/opt/watcom
+ENV INCLUDE=${WATCOM}/h
+ENV PATH=${PATH}:${WATCOM}/binl
+
+ENV PLATFORMIO_CORE_DIR=/workspace/.platformio
+
+ARG WSUSER=wario
+RUN set -e \
+    ; useradd -s /bin/bash -m ${WSUSER} \
+    ; echo "${WSUSER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    ;
+
+COPY cntnr-init /usr/local/bin/
+ENTRYPOINT ["/usr/local/bin/cntnr-init"]

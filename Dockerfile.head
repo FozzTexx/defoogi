@@ -1,0 +1,16 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+ARG BASE=debian:12.10
+
+FROM ${BASE} AS tooling
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    git \
+    ;
+EOF

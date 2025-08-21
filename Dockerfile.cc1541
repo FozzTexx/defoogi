@@ -1,0 +1,15 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS cc1541
+
+ARG CC1541_VERSION
+RUN <<EOF
+  set -e
+  cd /tmp
+  git clone -b ${CC1541_VERSION} https://bitbucket.org/ptv_claus/cc1541.git
+  cd cc1541
+  make
+  make install
+  cd /tmp
+  rm -rf cc1541
+EOF

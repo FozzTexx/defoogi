@@ -1,0 +1,42 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS cc65
+
+ARG CC65_VERSION
+ARG PKG=cc65
+ARG REPO_BASE=https://github.com/${PKG}
+
+RUN <<EOF
+  set -e
+  cd /tmp
+  git clone ${REPO_BASE}/${PKG}.git
+  cd ${PKG}
+  git checkout ${CC65_VERSION}
+  PREFIX=/usr/local make
+  PREFIX=/opt/${PKG} make install
+EOF
+
+# Convert installed cc65 into a deb
+RUN <<EOF
+  set -e
+
+  apt-get install -y --no-install-recommends \
+    rsync \
+    ;
+
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local
+  rsync -a /opt/${PKG}/. usr/local/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "${CC65_VERSION}" >> DEBIAN/control
+  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF

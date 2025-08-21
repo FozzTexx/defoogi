@@ -1,0 +1,43 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS cmoc
+
+ARG LWTOOLS_VERSION
+RUN <<EOF
+  set -e
+  cd /tmp
+  wget http://www.lwtools.ca/releases/lwtools/lwtools-${LWTOOLS_VERSION}.tar.gz
+  tar -xf lwtools-${LWTOOLS_VERSION}.tar.gz
+  cd lwtools-${LWTOOLS_VERSION}
+  make
+  make install
+  cd /tmp
+  rm -rf lwtools*
+EOF
+
+ARG CMOC_VERSION
+RUN <<EOF
+  set -e
+  cd /tmp
+  wget http://gvlsywt.cluster051.hosting.ovh.net/dev/cmoc-${CMOC_VERSION}.tar.gz
+  tar -xf cmoc-${CMOC_VERSION}.tar.gz
+  cd cmoc-${CMOC_VERSION}
+  ./configure
+  make
+  make install
+  cd /tmp
+  rm -rf cmoc*
+EOF
+
+ARG TOOLSHED_VERSION
+# Install only decb from toolshed
+RUN <<EOF
+  set -e
+  cd /tmp
+  git clone https://github.com/n6il/toolshed.git
+  cd toolshed
+  git checkout ${TOOLSHED_VERSION}
+  make -C build/unix APPS=decb install
+  cd /tmp
+  rm -rf toolshed
+EOF
