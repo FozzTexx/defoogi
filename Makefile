@@ -14,27 +14,22 @@ MULTI_ARCH=linux/amd64,linux/arm64
 # versions they were originally developed with.
 VERSIONS=versions.env
 
-# Make sure head is always first and final is always last!
-DOCKERFILES=\
-  Dockerfile.head \
-  Dockerfile.cc1541 \
-  Dockerfile.cc65 \
-  Dockerfile.cmoc \
-  Dockerfile.dir2atr \
-  Dockerfile.mads \
-  Dockerfile.ow2 \
-  Dockerfile.final
+COMPONENTS=cc1541 cc65 cmoc dir2atr mads
+CORE=head final tail
 
-docker-build: Dockerfile $(COMMAND) versions.env
+CORE_STAGES = $(addsuffix .docker,$(CORE))
+COMPONENT_STAGES = $(addsuffix .docker,$(COMPONENTS))
+
+docker-build: $(CORE_STAGES) $(COMPONENT_STAGES) $(COMMAND) versions.env
+	printf "%s\n" $(COMPONENTS) | \
+	sed 's,.*,COPY --from=& /tmp/&.deb /tmp/packages/,' | \
+	cat head.docker $(COMPONENT_STAGES) final.docker - tail.docker | \
 	env BUILDKIT_PROGRESS=plain \
-	  docker $(BUILDX) build $(REBUILDFLAGS) -f Dockerfile \
+	  docker $(BUILDX) build $(REBUILDFLAGS) -f - \
 	    $(PLATFORMS) $(EXTRA_ARGS) \
 	    $(shell sed 's/^/--build-arg /' $(VERSIONS)) \
 	    --build-arg WSUSER=$(WSUSER) \
 	    --rm -t $(IMAGE):$(VERSION) -t $(IMAGE):latest .
-
-Dockerfile: $(DOCKERFILES)
-	cat $^ > $@
 
 $(COMMAND):
 	ln -s start $@

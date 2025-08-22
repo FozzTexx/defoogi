@@ -1,0 +1,35 @@
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends /tmp/packages/*.deb
+EOF
+
+# Essential tools
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    curl \
+    less \
+    sudo \
+    unzip \
+    wget \
+    ;
+  rm -rf /var/lib/apt/lists/*
+EOF
+
+ENV WATCOM=/opt/watcom
+ENV INCLUDE=${WATCOM}/h
+ENV PATH=${PATH}:${WATCOM}/binl
+
+ENV PLATFORMIO_CORE_DIR=/workspace/.platformio
+
+ARG WSUSER=wario
+RUN set -e \
+    ; useradd -s /bin/bash -m ${WSUSER} \
+    ; echo "${WSUSER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
+    ;
+
+COPY cntnr-init /usr/local/bin/
+ENTRYPOINT ["/usr/local/bin/cntnr-init"]

@@ -1,4 +1,4 @@
-# Dockerfile is ignored because it is generated from Dockerfile.*
+# Dockerfile is ignored because it is generated from *.docker
 Dockerfile
 
 # Visual Studio Code workspace files
