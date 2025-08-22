@@ -1,10 +1,10 @@
 IMAGE=defoogi
-VERSION=1.4
+VERSION=1.4.0
 
 WSUSER=wario
 PREFIX=/usr/local
 COMMAND=$(notdir $(IMAGE))
-#MULTI_ARCH=linux/amd64,linux/arm64,linux/arm/v7
+#MULTI_ARCH=linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v8
 MULTI_ARCH=linux/amd64,linux/arm64
 
 # Package versions are pinned intentionally.

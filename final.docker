@@ -49,10 +49,3 @@ RUN <<EOF
   pipx install abimap
   pipx install platformio
 EOF
-
-RUN mkdir -p /tmp/packages
-COPY --from=cc65 /tmp/cc65.deb /tmp/packages/
-COPY --from=dir2atr /tmp/dir2atr.deb /tmp/packages/
-COPY --from=cc1541 /tmp/cc1541.deb /tmp/packages/
-COPY --from=cmoc /tmp/cmoc.deb /tmp/packages/
-COPY --from=mads /tmp/mads.deb /tmp/packages/

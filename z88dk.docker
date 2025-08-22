@@ -1,0 +1,62 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS z88dk
+ENV DEBIAN_FRONTEND=noninteractive
+
+ARG PKG=z88dk
+ARG Z88DK_VERSION
+ARG REPO_BASE=https://github.com/${PKG}
+
+RUN rm -rf /usr/local/*
+
+WORKDIR /${PKG}-build
+
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    bison \
+    curl \
+    flex \
+    libgmp-dev \
+    libxml2-dev \
+    pkg-config \
+    python3 \
+    ;
+
+  git clone --recursive ${REPO_BASE}/${PKG}.git
+  cd ${PKG}
+  git checkout --recurse-submodules ${Z88Dk_VERSION}
+EOF
+RUN <<EOF
+  set -e
+  cd ${PKG}
+  export BUILD_SDCC=1
+  export BUILD_SDCC_HTTP=1
+  chmod +x build.sh
+  export PATH=${PATH}:`pwd`/bin
+  export ZCCCFG=`pwd`/lib/config
+  export PREFIX=/usr/local
+  ./build.sh
+  make install
+EOF
+
+RUN <<EOF
+  set -e
+
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local/bin
+  cp -R /usr/local/. usr/local/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "2.4-${Z88DK_VERSION}" >> DEBIAN/control
+  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF
