@@ -1,29 +1,50 @@
 # -*- mode: Fundamental; indent-tabs-mode: nil -*-
 
 FROM tooling AS mads
+ENV DEBIAN_FRONTEND=noninteractive
 
 ARG MADS_VERSION
 ARG PKG=mads
 WORKDIR /${PKG}-build
 
+# Clone repo and checkout correct version
 RUN <<EOF
   set -e
-  git clone https://github.com/tebe6502/Mad-Assembler.git
-  cp Mad-Assembler/bin/linux_x86_64/mads /usr/local/bin
+  git clone https://github.com/tebe6502/Mad-Assembler.git ${PKG}
+  cd ${PKG}
+  git checkout ${MADS_VERSION}
 EOF
 
+# Install dependencies & tools
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    fpc \
+    ;
+EOF
+
+# Build
+RUN <<EOF
+  set -e
+  cd ${PKG}
+  fpc -Mdelphi -vh -O3 mads.pas
+EOF
+
+# Create .deb
 RUN <<EOF
   set -e
 
+  WORKDIR=${PWD}
   PKG_ROOT="/tmp/${PKG}"
   mkdir -p "${PKG_ROOT}"
   cd "${PKG_ROOT}"
   mkdir -p usr/local/bin
-  cp -R /usr/local/bin/mads usr/local/bin/.
+  cp -R ${WORKDIR}/${PKG}/${PKG} usr/local/bin/.
 
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
-  echo Version: "${MADS_VERSION}" >> DEBIAN/control
+  echo Version: "2.1.7-${MADS_VERSION}" >> DEBIAN/control
   echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
