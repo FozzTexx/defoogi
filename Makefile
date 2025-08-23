@@ -14,7 +14,7 @@ MULTI_ARCH=linux/amd64,linux/arm64
 # versions they were originally developed with.
 VERSIONS=versions.env
 
-COMPONENTS=cc1541 cc65 cmoc dir2atr mads
+COMPONENTS=cc1541 cc65 cmoc dir2atr mads open-watcom-v2 z88dk
 CORE=head final tail
 
 CORE_STAGES = $(addsuffix .docker,$(CORE))

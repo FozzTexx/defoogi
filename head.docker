@@ -1,6 +1,6 @@
 # -*- mode: Fundamental; indent-tabs-mode: nil -*-
 
-ARG BASE=debian:12.10
+ARG BASE=debian:13.0
 
 FROM ${BASE} AS tooling
 

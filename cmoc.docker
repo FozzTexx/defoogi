@@ -40,10 +40,17 @@ ARG TOOLSHED_VERSION
 # Install only decb from toolshed
 RUN <<EOF
   set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    libfuse-dev \
+    markdown \
+    ;
+
   git clone https://github.com/n6il/toolshed.git
   cd toolshed
   git checkout ${TOOLSHED_VERSION}
-  make -C build/unix APPS=decb install
+  make -C build/unix
+  cp build/unix/decb/decb /usr/local/bin
 EOF
 
 RUN <<EOF

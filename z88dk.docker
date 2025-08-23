@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 ARG PKG=z88dk
 ARG Z88DK_VERSION
+ARG Z88DK_PREFIX=/usr/local
 ARG REPO_BASE=https://github.com/${PKG}
 
 RUN rm -rf /usr/local/*
@@ -13,21 +14,45 @@ WORKDIR /${PKG}-build
 
 RUN <<EOF
   set -e
-  apt-get update
-  apt-get install -y --no-install-recommends \
-    bison \
-    curl \
-    flex \
-    libgmp-dev \
-    libxml2-dev \
-    pkg-config \
-    python3 \
-    ;
-
   git clone --recursive ${REPO_BASE}/${PKG}.git
   cd ${PKG}
   git checkout --recurse-submodules ${Z88Dk_VERSION}
 EOF
+
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    bison \
+    ccache \
+    cpanminus \
+    curl \
+    dos2unix \
+    flex \
+    libboost-all-dev \
+    libcapture-tiny-perl \
+    libclone-perl \
+    libdata-hexdump-perl \
+    libfile-slurp-perl \
+    libgmp3-dev \
+    liblocal-lib-perl \
+    libmodern-perl-perl \
+    libpath-tiny-perl \
+    libregexp-common-perl \
+    libtext-table-perl \
+    libxml2-dev \
+    libyaml-perl \
+    m4 \
+    perl \
+    pkg-config \
+    ragel \
+    re2c \
+    texi2html \
+    texinfo \
+    zlib1g-dev \
+  ;
+EOF
+
 RUN <<EOF
   set -e
   cd ${PKG}
@@ -36,9 +61,38 @@ RUN <<EOF
   chmod +x build.sh
   export PATH=${PATH}:`pwd`/bin
   export ZCCCFG=`pwd`/lib/config
-  export PREFIX=/usr/local
-  ./build.sh
-  make install
+  PREFIX=${Z88DK_PREFIX} ./build.sh -z
+EOF
+
+RUN <<EOF
+  set -e
+  cd ${PKG}
+  PREFIX=${Z88DK_PREFIX} make install
+EOF
+
+ARG EOSLIB_VERSION
+RUN <<EOF
+  set -e
+  git clone https://github.com/tschak909/eoslib.git
+  cd eoslib
+  git checkout ${EOSLIB_VERSION}
+  make
+  PREFIX=${Z88DK_PREFIX}/share/${PKG}
+  mkdir -p ${PREFIX}/lib/clibs ${PREFIX}/include
+  cp eos.lib ${PREFIX}/lib/clibs/.
+  cp src/eos.h ${PREFIX}/include/.
+EOF
+
+ARG SMARTKEYS_VERSION
+RUN <<EOF
+  set -e
+  git clone -b smartkeyslib-${SMARTKEYS_VERSION} https://github.com/tschak909/smartkeyslib.git
+  cd smartkeyslib
+  make
+  PREFIX=${Z88DK_PREFIX}/share/${PKG}
+  mkdir -p ${PREFIX}/lib/clibs ${PREFIX}/include
+  cp smartkeys.lib ${PREFIX}/lib/clibs/.
+  cp src/smartkeys.h ${PREFIX}/include/.
 EOF
 
 RUN <<EOF
@@ -47,8 +101,8 @@ RUN <<EOF
   PKG_ROOT="/tmp/${PKG}"
   mkdir -p "${PKG_ROOT}"
   cd "${PKG_ROOT}"
-  mkdir -p usr/local/bin
-  cp -R /usr/local/. usr/local/.
+  mkdir -p ./${Z88DK_PREFIX}
+  cp -R ${Z88DK_PREFIX}/. ./${Z88DK_PREFIX}/.
 
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control

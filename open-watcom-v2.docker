@@ -3,7 +3,7 @@
 ########################################
 # Open Watcom V2
 
-FROM tooling AS openwatcom
+FROM tooling AS open-watcom-v2
 
 # Doing the install as multiple layers because each command takes
 # *forever* and when it craps out I want to be able to get into the
