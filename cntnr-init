@@ -7,7 +7,7 @@ if [ -n "${WORKSPACE}" -a -d "${WORKSPACE}" ] ; then
     WSUG=$(su ${WSUSER} -s /bin/sh -c "stat -c '%u:%g' ${WORKSPACE}")
     WSUID=${WSUG%%:*}
     WSGID=${WSUG#*:}
-    if [ ${WSUID} -lt 1000 -o ${WSGID} -lt 1000 ] ; then
+    if [ ${WSUID} -lt 1000 ] ; then
         echo ${WORKSPACE} is owned by system user
         echo not attempting to match uid:gid
     else
