@@ -15,13 +15,14 @@ VERSIONS=versions.env
 COMPONENTS=cc1541 cc65 cmoc dir2atr mads open-watcom-v2 z88dk
 CORE=head final tail
 
-CORE_STAGES = $(addsuffix .docker,$(CORE))
-COMPONENT_STAGES = $(addsuffix .docker,$(COMPONENTS))
+CORE_STAGES = $(addsuffix .docker,$(addprefix Dockerfiles/,$(CORE)))
+COMPONENT_STAGES = $(addsuffix .docker,$(addprefix Dockerfiles/,$(COMPONENTS)))
 
 docker-build: $(CORE_STAGES) $(COMPONENT_STAGES) $(COMMAND) versions.env
 	printf "%s\n" $(COMPONENTS) | \
 	sed 's,.*,COPY --from=& /tmp/&.deb /tmp/packages/,' | \
-	cat head.docker $(COMPONENT_STAGES) final.docker - tail.docker | \
+	cat $(word 1,$(CORE_STAGES)) $(COMPONENT_STAGES) \
+	  $(word 2,$(CORE_STAGES)) - $(word 3,$(CORE_STAGES)) | \
 	env BUILDKIT_PROGRESS=plain \
 	  docker build $(REBUILDFLAGS) -f - \
 	    $(EXTRA_ARGS) \
