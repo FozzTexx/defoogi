@@ -90,3 +90,28 @@ It’s just **edit → push → boot → run**.
     and debug directly within your editor
 - Works with shell scripts and CI/CD pipelines - just prefix your
   existing commands
+
+---
+
+## Supported CPUs / Platforms
+
+`defoogi` currently includes compilers and assemblers targeting the following CPUs:
+
+- **6502 series** (via `cc65`)
+  - 6502, 65C02, 65816
+  - Platforms: Commodore 64, NES, Apple II, Atari 8-bit, VIC-20, Oric
+
+- **6809 series** (via `CMOC`)
+  - 6809, 6309
+  - Platforms: Tandy CoCo, Dragon 32/64, OS-9 systems
+
+- **Z80 series** (via `z88dk`)
+  - Z80, Z180, 8080, 8085
+  - Platforms: ZX Spectrum, MSX, Amstrad CPC, CP/M machines, TI-83/84 calculators
+
+- **x86 series** (via `Open Watcom`)
+  - 8086, 80286, 80386
+  - Platforms: IBM PC, DOS, early Windows (16-bit), CP/M-86
+
+Other assemblers and tools included may support additional retro CPUs
+and disk formats. See the Dockerfile for a complete list.
