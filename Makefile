@@ -1,11 +1,9 @@
 IMAGE=defoogi
-VERSION=1.4.0
+TAG=1.4.0
 
 WSUSER=wario
 PREFIX=/usr/local
 COMMAND=$(notdir $(IMAGE))
-#MULTI_ARCH=linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v8
-MULTI_ARCH=linux/amd64,linux/arm64
 
 # Package versions are pinned intentionally.
 # This ensures a stable, reproducible toolchain that can be matched to
@@ -25,11 +23,11 @@ docker-build: $(CORE_STAGES) $(COMPONENT_STAGES) $(COMMAND) versions.env
 	sed 's,.*,COPY --from=& /tmp/&.deb /tmp/packages/,' | \
 	cat head.docker $(COMPONENT_STAGES) final.docker - tail.docker | \
 	env BUILDKIT_PROGRESS=plain \
-	  docker $(BUILDX) build $(REBUILDFLAGS) -f - \
-	    $(PLATFORMS) $(EXTRA_ARGS) \
+	  docker build $(REBUILDFLAGS) -f - \
+	    $(EXTRA_ARGS) \
 	    $(shell sed 's/^/--build-arg /' $(VERSIONS)) \
 	    --build-arg WSUSER=$(WSUSER) \
-	    --rm -t $(IMAGE):$(VERSION) -t $(IMAGE):latest .
+	    --rm -t $(IMAGE):$(TAG) -t $(IMAGE):latest .
 
 $(COMMAND):
 	ln -s start $@
@@ -40,10 +38,41 @@ $(PREFIX)/bin/$(COMMAND): start
 	cp start $(PREFIX)/bin/$(COMMAND)
 
 multi-arch:
-	make BUILDX=buildx PLATFORMS="--platform $(MULTI_ARCH)"
+	@if [ -z "$(NAMESPACE)" ] ; then \
+	    echo "Error: must include NAMESPACE=" ; \
+	    exit 1 ; \
+	fi
+	@case "$(NAMESPACE)" in \
+	    */) ;; \
+	    *) echo "Error: NAMESPACE must end with a slash." >&2 ; exit 1 ;; \
+	esac
+	make IMAGE=$(NAMESPACE)$(IMAGE) EXTRA_ARGS=--push \
+	    TAG=$(TAG)-$$(docker version --format '{{.Server.Arch}}')
+
+manifest:
+	@if [ -z "$(NAMESPACE)" ] ; then \
+	    echo "Error: must include NAMESPACE=" ; \
+	    exit 1 ; \
+	fi
+	@case "$(NAMESPACE)" in \
+	    */) ;; \
+	    *) echo "Error: NAMESPACE must end with a slash." >&2 ; exit 1 ;; \
+	esac
+	DOCKER_API="https://registry.hub.docker.com/v2/repositories/" ; \
+	ARCHS=$$(curl -s "$${DOCKER_API}$(NAMESPACE)$(IMAGE)/tags?page_size=100" \
+	    | jq -r '.results[].name' | sed -n '/^$(TAG)-/s/.*-//p') ; \
+	if [ -z "$${ARCHS}" ] ; then \
+	    echo "No existing archs for $(TAG)" ; \
+	    exit 1 ; \
+	fi ; \
+	ARGS="$(NAMESPACE)$(IMAGE):$(TAG)" ; \
+	for arch in $${ARCHS} ; do \
+	    ARGS="$${ARGS} --amend $(NAMESPACE)$(IMAGE):$(TAG)-$${arch}" ; \
+	done ; \
+	docker manifest create $${ARGS} ; \
+	docker manifest push $(NAMESPACE)$(IMAGE):$(TAG)
 
 # To force a complete clean build, do:
 #   make rebuild
 rebuild:
-	rm -f $(BUNDLES)
 	make REBUILDFLAGS="--no-cache --pull"
