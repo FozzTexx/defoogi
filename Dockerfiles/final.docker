@@ -25,6 +25,7 @@ RUN <<EOF
   rm -rf /var/lib/apt/lists/*
 
   cd /usr/local/bin
+  chmod a+r ${AC_JAR}
   cat >ac <<ACEOF
 #!/bin/sh
 exec java -jar "\$(dirname \$0)"/--ACJAR-- \$@

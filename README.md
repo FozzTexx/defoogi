@@ -32,8 +32,8 @@ the host system without extra `chown` or permission fixes.
 - [Open Watcom v2](https://openwatcom.org/) - C/C++ compiler for DOS and other targets
 - [z88dk](https://www.z88dk.org/) - Z80 C compiler
 
-(More assemblers, linkers, and disk tools are bundled - see the
-*.docker files for details.)
+(More assemblers, linkers, and disk tools are bundled - look in
+Dockerfiles for details.)
 
 ---
 
