@@ -28,7 +28,7 @@ docker-build: $(CORE_STAGES) $(COMPONENT_STAGES) $(COMMAND) versions.env
 	    $(EXTRA_ARGS) \
 	    $(shell sed 's/^/--build-arg /' $(VERSIONS)) \
 	    --build-arg WSUSER=$(WSUSER) \
-	    --rm -t $(IMAGE):$(TAG) -t $(IMAGE):latest .
+	    --rm -t $(IMAGE):$(TAG)$(TAG_ARCH) -t $(IMAGE):latest$(TAG_ARCH) .
 
 $(COMMAND):
 	ln -s start $@
@@ -48,7 +48,7 @@ multi-arch:
 	    *) echo "Error: NAMESPACE must end with a slash." >&2 ; exit 1 ;; \
 	esac
 	make IMAGE=$(NAMESPACE)$(IMAGE) EXTRA_ARGS=--push \
-	    TAG=$(TAG)-$$(docker version --format '{{.Server.Arch}}')
+	    TAG_ARCH="-$$(docker version --format '{{.Server.Arch}}')"
 
 manifest:
 	@if [ -z "$(NAMESPACE)" ] ; then \
@@ -71,7 +71,13 @@ manifest:
 	    ARGS="$${ARGS} --amend $(NAMESPACE)$(IMAGE):$(TAG)-$${arch}" ; \
 	done ; \
 	docker manifest create $${ARGS} ; \
-	docker manifest push $(NAMESPACE)$(IMAGE):$(TAG)
+	docker manifest push $(NAMESPACE)$(IMAGE):$(TAG) ; \
+	ARGS="$(NAMESPACE)$(IMAGE):latest" ; \
+	for arch in $${ARCHS} ; do \
+	    ARGS="$${ARGS} --amend $(NAMESPACE)$(IMAGE):latest-$${arch}" ; \
+	done ; \
+	docker manifest create $${ARGS} ; \
+	docker manifest push $(NAMESPACE)$(IMAGE):latest ; \
 
 # To force a complete clean build, do:
 #   make rebuild
