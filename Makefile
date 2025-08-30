@@ -47,8 +47,10 @@ multi-arch:
 	    */) ;; \
 	    *) echo "Error: NAMESPACE must end with a slash." >&2 ; exit 1 ;; \
 	esac
-	make IMAGE=$(NAMESPACE)$(IMAGE) EXTRA_ARGS=--push \
-	    TAG_ARCH="-$$(docker version --format '{{.Server.Arch}}')"
+	export TAG_ARCH="-$$(docker version --format '{{.Server.Arch}}')" \
+	&& make IMAGE=$(NAMESPACE)$(IMAGE) \
+	&& docker push $(NAMESPACE)$(IMAGE):$(TAG)$${TAG_ARCH} \
+	&& docker push $(NAMESPACE)$(IMAGE):latest$${TAG_ARCH}
 
 manifest:
 	@if [ -z "$(NAMESPACE)" ] ; then \
