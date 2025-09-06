@@ -11,10 +11,13 @@ RUN <<EOF
   apt-get update
   apt-get install -y --no-install-recommends \
     curl \
+    file \
+    jq \
     less \
     sudo \
     unzip \
     wget \
+    zip \
     ;
   rm -rf /var/lib/apt/lists/*
 EOF

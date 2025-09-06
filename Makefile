@@ -1,5 +1,5 @@
 IMAGE=defoogi
-TAG=1.4.1
+TAG=1.4.2
 
 WSUSER=wario
 PREFIX=/usr/local
