@@ -48,6 +48,10 @@ while [ $# -gt 0 ]; do
             DAEMON=1
             shift
             ;;
+	--directory)
+	    cd $2
+	    shift 2
+	    ;;
     esac
 done
 
