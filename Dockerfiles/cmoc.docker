@@ -46,9 +46,8 @@ RUN <<EOF
     markdown \
     ;
 
-  git clone https://github.com/n6il/toolshed.git
+  git clone -b ${TOOLSHED_VERSION} https://github.com/nitros9project/toolshed.git
   cd toolshed
-  git checkout ${TOOLSHED_VERSION}
   make -C build/unix
   cp build/unix/decb/decb /usr/local/bin
 EOF
