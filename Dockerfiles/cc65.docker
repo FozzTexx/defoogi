@@ -2,6 +2,7 @@
 
 FROM tooling AS cc65
 
+ARG MAINTAINER
 ARG CC65_VERSION
 ARG PKG=cc65
 ARG REPO_BASE=https://github.com/${PKG}
@@ -29,7 +30,7 @@ RUN <<EOF
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
   echo Version: "${CC65_VERSION}" >> DEBIAN/control
-  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
 

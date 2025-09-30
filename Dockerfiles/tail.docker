@@ -28,6 +28,8 @@ ENV PATH=${PATH}:${WATCOM}/binl
 
 ENV PLATFORMIO_CORE_DIR=/workspace/.platformio
 
+ENV PICO_SDK_PATH=/usr/local/share/pico-sdk
+
 ARG WSUSER=wario
 RUN set -e \
     ; useradd -s /bin/bash -m ${WSUSER} \

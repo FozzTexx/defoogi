@@ -35,9 +35,9 @@ def load_os_release():
           if len(value) > 1 and (value.startswith('"') and value.endswith('"') or \
                                  value.startswith("'") and value.endswith("'")):
             value = value[1:-1]
-                    
+
           data[key] = value
-          
+
   except FileNotFoundError:
     return None
   return data
@@ -79,7 +79,7 @@ def remap_codename(distro, alt_distro, version):
     last_codename = row[2]
 
   return last_codename
-  
+
 def find_distro():
   dist_dict = load_os_release()
   distro = dist_dict['ID']
@@ -103,12 +103,12 @@ def write_file_as_root(path, contents):
   cmd = ["sudo", "tee", path]
   result = subprocess.run(cmd, input=contents, check=True, capture_output=True, text=True)
   return
-  
+
 def main():
   args = build_argparser().parse_args()
 
   # FIXME - is docker already installed?
-  
+
   distro, codename = find_distro()
   result = subprocess.run(['dpkg', '--print-architecture'], capture_output=True,
                           text=True, check=True)
@@ -150,7 +150,7 @@ def main():
     print()
     print("####################")
     print()
-  
+
   return
 
 if __name__ == "__main__":

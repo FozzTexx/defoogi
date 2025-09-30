@@ -3,6 +3,7 @@
 FROM tooling AS mads
 ENV DEBIAN_FRONTEND=noninteractive
 
+ARG MAINTAINER
 ARG MADS_VERSION
 ARG PKG=mads
 WORKDIR /${PKG}-build
@@ -45,7 +46,7 @@ RUN <<EOF
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
   echo Version: "2.1.7-${MADS_VERSION}" >> DEBIAN/control
-  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
 

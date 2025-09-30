@@ -5,6 +5,8 @@
 
 FROM tooling AS open-watcom-v2
 
+ARG MAINTAINER
+
 # Doing the install as multiple layers because each command takes
 # *forever* and when it craps out I want to be able to get into the
 # container to investigate.
@@ -49,7 +51,7 @@ RUN <<EOF
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
   echo Version: "${OW2_VERSION}" >> DEBIAN/control
-  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
 

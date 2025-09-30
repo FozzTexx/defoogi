@@ -2,6 +2,7 @@
 
 FROM tooling AS dir2atr
 
+ARG MAINTAINER
 ARG ATASM_VERSION
 
 RUN rm -rf /usr/local/*
@@ -55,7 +56,7 @@ RUN <<EOF
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
   echo Version: "1-${ATARISIO_VERSION}" >> DEBIAN/control
-  echo Maintainer: fozztexx@fozztexx.com >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
 

@@ -1,0 +1,51 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS applecommander
+
+ARG MAINTAINER
+ARG PKG=applecommander
+ARG AC_VERSION
+ARG AC_URL=https://github.com/AppleCommander/AppleCommander/releases/download/${AC_VERSION}
+ARG AC_JAR=AppleCommander-ac-${AC_VERSION}.jar
+ARG ACX_JAR=AppleCommander-acx-${AC_VERSION}.jar
+
+ARG PKG_ROOT="/tmp/${PKG}"
+ADD ${AC_URL}/${AC_JAR} ${PKG_ROOT}/usr/local/bin/
+ADD ${AC_URL}/${ACX_JAR} ${PKG_ROOT}/usr/local/bin/
+
+RUN <<EOF
+  set -e
+
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local/bin
+  cd usr/local/bin
+  chmod a+r ${AC_JAR} ${ACX_JAR}
+
+  cat >ac <<ACEOF
+#!/bin/sh
+exec java -jar "\$(dirname \$0)"/--ACJAR-- \$@
+ACEOF
+  sed -i -e "s/--ACJAR--/${AC_JAR}/" ac
+  chmod +x ac
+
+  cat >acx <<ACEOF
+#!/bin/sh
+exec java -jar "\$(dirname \$0)"/--ACXJAR-- \$@
+ACEOF
+  sed -i -e "s/--ACXJAR--/${ACX_JAR}/" acx
+  chmod +x acx
+
+  cd "${PKG_ROOT}"
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "${AC_VERSION}" >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Depends: default-jdk >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF

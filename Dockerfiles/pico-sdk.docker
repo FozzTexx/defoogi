@@ -1,21 +1,10 @@
 # -*- mode: Fundamental; indent-tabs-mode: nil -*-
 
-FROM tooling AS cc1541
+FROM tooling AS pico-sdk
 
 ARG MAINTAINER
-ARG CC1541_VERSION
-ARG PKG=cc1541
-WORKDIR /${PKG}-build
-
-RUN rm -rf /usr/local/*
-
-RUN <<EOF
-  set -e
-  git clone -b ${CC1541_VERSION} https://bitbucket.org/ptv_claus/cc1541.git
-  cd cc1541
-  make
-  make install
-EOF
+ARG PICOSDK_VERSION
+ARG PKG=pico-sdk
 
 RUN <<EOF
   set -e
@@ -23,14 +12,20 @@ RUN <<EOF
   PKG_ROOT="/tmp/${PKG}"
   mkdir -p "${PKG_ROOT}"
   cd "${PKG_ROOT}"
-  mkdir -p usr/local/bin
-  cp -R /usr/local/. usr/local/.
+  mkdir -p usr/local/share
+  cd usr/local/share
+  git clone -b ${PICOSDK_VERSION} https://github.com/raspberrypi/pico-sdk.git
+  cd pico-sdk
+  git submodule update --init
 
+  cd "${PKG_ROOT}"
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
-  echo Version: "${CC1541_VERSION}" >> DEBIAN/control
+  echo Version: "${PICOSDK_VERSION}" >> DEBIAN/control
   echo Maintainer: ${MAINTAINER} >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Depends: gcc-arm-none-eabi, libnewlib-arm-none-eabi, libstdc++-arm-none-eabi-newlib \
+    >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
 
   cd ..
