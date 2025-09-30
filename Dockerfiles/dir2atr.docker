@@ -50,7 +50,7 @@ RUN <<EOF
   mkdir -p "${PKG_ROOT}"
   cd "${PKG_ROOT}"
   mkdir -p usr/local/bin
-  cp /usr/local/bin/dir2atr usr/local/bin/.
+  cp -R /usr/local/bin/. usr/local/bin/.
 
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
