@@ -5,18 +5,47 @@ FROM tooling AS pico-sdk
 ARG MAINTAINER
 ARG PICOSDK_VERSION
 ARG PKG=pico-sdk
+ARG PKG_ROOT="/tmp/${PKG}"
+
+WORKDIR /${PKG}-build
+
+RUN rm -rf /usr/local/*
 
 RUN <<EOF
   set -e
 
-  PKG_ROOT="/tmp/${PKG}"
   mkdir -p "${PKG_ROOT}"
   cd "${PKG_ROOT}"
   mkdir -p usr/local/share
+
   cd usr/local/share
   git clone -b ${PICOSDK_VERSION} https://github.com/raspberrypi/pico-sdk.git
   cd pico-sdk
   git submodule update --init
+EOF
+
+ENV PICO_SDK_PATH=${PKG_ROOT}/usr/local/share/pico-sdk
+
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    cmake \
+    libusb-1.0-0-dev \
+    pkg-config \
+    ;
+
+  git clone https://github.com/raspberrypi/picotool.git
+  cd picotool
+  cmake -B build
+  make -C build
+  mkdir -p "${PKG_ROOT}/usr/local/bin"
+  cp build/picotool "${PKG_ROOT}/usr/local/bin"
+EOF
+
+RUN <<EOF
+  set -e
 
   cd "${PKG_ROOT}"
   mkdir DEBIAN
@@ -24,8 +53,7 @@ RUN <<EOF
   echo Version: "${PICOSDK_VERSION}" >> DEBIAN/control
   echo Maintainer: ${MAINTAINER} >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
-  echo Depends: gcc-arm-none-eabi, libnewlib-arm-none-eabi, libstdc++-arm-none-eabi-newlib \
-    >> DEBIAN/control
+  echo Depends: gcc-arm-none-eabi, libnewlib-arm-none-eabi, libstdc++-arm-none-eabi-newlib, libusb-1.0-0 >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
 
   cd ..
