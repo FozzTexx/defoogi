@@ -110,6 +110,7 @@ RUN <<EOF
   echo Version: "2.4-${Z88DK_VERSION}" >> DEBIAN/control
   echo Maintainer: ${MAINTAINER} >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Depends: m4 >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
 
   cd ..
