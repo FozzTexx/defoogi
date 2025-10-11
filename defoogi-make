@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# A simple wrapper for GNU make that captures the directory specified by -C,
+# and then passes all arguments through to the real 'make' command.
+
+TARGET_DIR=""
+
+# Inspect all arguments to find the -C or --directory flag
+# We iterate through the positional arguments ($@) using a standard loop construct.
+args=("$@")
+num_args=${#args[@]}
+
+for ((i=0; i < num_args; i++)); do
+    arg="${args[i]}"
+
+    # Check for the directory flags
+    if [[ "$arg" == "-C" || "$arg" == "--directory" ]]; then
+        # The value must be the next argument
+        if (( i + 1 < num_args )); then
+            TARGET_DIR="${args[i+1]}"
+	    unset args[i+1]
+	    unset args[i]
+            # Since we found it, we can stop the search
+            break
+        fi
+    fi
+done
+
+if [[ -z "$TARGET_DIR" ]]; then
+    TARGET_DIR="${PWD}"
+fi
+TARGET_DIR="$(realpath ${TARGET_DIR})"
+PARENT_DIR="$(realpath ${TARGET_DIR}/..)"
+exec defoogi --directory "${PARENT_DIR}" make -C "${TARGET_DIR}" ${args[@]}
