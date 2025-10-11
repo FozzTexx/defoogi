@@ -10,6 +10,7 @@ RUN <<EOF
 
   apt-get update
   apt-get install -y --no-install-recommends \
+    bsdmainutils \
     curl \
     file \
     jq \
@@ -17,6 +18,7 @@ RUN <<EOF
     sudo \
     unzip \
     wget \
+    xxd \
     zip \
     ;
   rm -rf /var/lib/apt/lists/*
@@ -32,7 +34,7 @@ ENV PICO_SDK_PATH=/usr/local/share/pico-sdk
 
 ARG WSUSER=wario
 RUN set -e \
-    ; useradd -s /bin/bash -m ${WSUSER} \
+    ; useradd -G dialout -s /bin/bash -m ${WSUSER} \
     ; echo "${WSUSER} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers \
     ;
 
