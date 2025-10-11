@@ -22,7 +22,7 @@ export PWD=$(pwd -P)
 
 ARGS=""
 
-DCKARGS="--privileged --cap-add=SYS_ADMIN --cap-add SYS_PTRACE"
+DCKARGS="--privileged -v /dev:/dev --cap-add=SYS_ADMIN --cap-add SYS_PTRACE"
 # Always pass X11
 DCKARGS="${DCKARGS} -e DISPLAY -v ${HOME}/.Xauthority:/home/${WSUSER}/.Xauthority --net=host"
 
@@ -37,10 +37,12 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --shell)
             ARGS="${ARGS} $1"
+            DCKARGS="${DCKARGS} -it"
             shift
             ;;
         --super-shell)
             ARGS="${ARGS} $1"
+            DCKARGS="${DCKARGS} -it"
             shift
             ;;
         --daemon)
@@ -58,9 +60,9 @@ done
 # Use interactive -it flag on terminal
 if [[ $DAEMON = 0 ]] ; then
     DCKARGS="${DCKARGS} --rm"
-    if [[ -t 1 ]] ; then
-        DCKARGS="${DCKARGS} -it"
-    fi
+    # if [[ -t 1 ]] ; then
+    #     DCKARGS="${DCKARGS} -it"
+    # fi
 fi
 
 # if [ $# = 0 ] ; then
