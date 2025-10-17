@@ -28,6 +28,9 @@ ENV WATCOM=/opt/watcom
 ENV INCLUDE=${WATCOM}/h
 ENV PATH=${PATH}:${WATCOM}/binl
 
+ENV VBCC=/opt/vbcc
+ENV PATH=${PATH}:${VBCC}/bin
+
 ENV PLATFORMIO_CORE_DIR=/workspace/.platformio
 
 ENV PICO_SDK_PATH=/usr/local/share/pico-sdk

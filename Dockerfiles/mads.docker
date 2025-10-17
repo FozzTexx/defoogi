@@ -4,16 +4,28 @@ FROM tooling AS mads
 ENV DEBIAN_FRONTEND=noninteractive
 
 ARG MAINTAINER
-ARG MADS_VERSION
+ARG MADSASM_VERSION
+ARG MADSPAS_VERSION
 ARG PKG=mads
 WORKDIR /${PKG}-build
+ARG MADSASM_REPO=https://github.com/tebe6502/Mad-Assembler.git
+ARG MADSPAS_REPO=https://github.com/tebe6502/Mad-Pascal.git
 
 # Clone repo and checkout correct version
 RUN <<EOF
   set -e
-  git clone https://github.com/tebe6502/Mad-Assembler.git ${PKG}
-  cd ${PKG}
-  git checkout ${MADS_VERSION}
+
+  WORKDIR=${PWD}
+
+  cd ${WORKDIR}
+  git clone ${MADSASM_REPO} ${PKG}-asm
+  cd ${PKG}-asm
+  git checkout ${MADSASM_VERSION}
+
+  cd ${WORKDIR}
+  git clone ${MADSPAS_REPO} ${PKG}-pas
+  cd ${PKG}-pas
+  git checkout ${MADSPAS_VERSION}
 EOF
 
 # Install dependencies & tools
@@ -25,12 +37,60 @@ RUN <<EOF
     ;
 EOF
 
-# Build
+# Mad-Assembler
 RUN <<EOF
   set -e
-  cd ${PKG}
+  cd ${PKG}-asm
   fpc -Mdelphi -vh -O3 mads.pas
 EOF
+
+# Mad-Pascal
+RUN <<EOF
+  set -e
+  cd ${PKG}-pas
+  ls -Fla
+  fpc -MDelphi -vh -O3 src/mp.pas
+
+  patch -p1 <<PATCH_EOF
+diff --git a/blibs/fn_cookies.pas b/blibs/fn_cookies.pas
+index 78f05816..e3804506 100644
+--- a/blibs/fn_cookies.pas
++++ b/blibs/fn_cookies.pas
+@@ -126,7 +126,7 @@ function SetCookie(val: pointer; vlength: word):byte;
+ begin
+     if vlength > MAX_COOKIE_SIZE then vlength := MAX_COOKIE_SIZE;
+     OpenCookie(APPKEYMODE_WRITE);
+-    Move(val, @cookie.body, vlength);
++    Move(val, pointer(@cookie.body), vlength);
+     FN_Command(SIO_FUJICMD_WRITE_APPKEY , _W, MAX_COOKIE_SIZE, lo(vlength), hi(vlength), word(@cookie.body));
+     result := sioResult;
+     CloseCookie;
+@@ -137,7 +137,7 @@ begin
+     OpenCookie(APPKEYMODE_READ);
+     FN_Command(SIO_FUJICMD_READ_APPKEY, _R, SizeOf(TCookieFrame), 0, 0, word(@cookie));
+     result := sioResult;
+-    Move(@cookie.body, val, cookie.len);
++    Move(pointer(@cookie.body), val, cookie.len);
+     CloseCookie;
+ end;
+ 
+diff --git a/blibs/fn_tcp.pas b/blibs/fn_tcp.pas
+index 3675ef5a..14b24429 100644
+--- a/blibs/fn_tcp.pas
++++ b/blibs/fn_tcp.pas
+@@ -237,7 +237,7 @@ Begin
+     endHead := TCP_bufferWriteHead + result;
+     if endHead > TCP_BUFF_SIZE then begin  // do I have to wrap buffer?
+         FN_ReadBuffer(pointer(word(@TCP_buffer) + TCP_bufferWriteHead), TCP_BUFF_SIZE - TCP_bufferWriteHead); //read first half
+-        FN_ReadBuffer(@TCP_buffer, endHead - TCP_BUFF_SIZE); //read second half
++        FN_ReadBuffer(pointer(@TCP_buffer), endHead - TCP_BUFF_SIZE); //read second half
+     end else begin
+         FN_ReadBuffer(pointer(word(@TCP_buffer) + TCP_bufferWriteHead), result); // read at once
+     end;
+PATCH_EOF
+EOF
+
+SHELL ["/bin/bash", "-c"]
 
 # Create .deb
 RUN <<EOF
@@ -40,12 +100,21 @@ RUN <<EOF
   PKG_ROOT="/tmp/${PKG}"
   mkdir -p "${PKG_ROOT}"
   cd "${PKG_ROOT}"
+
   mkdir -p usr/local/bin
-  cp -R ${WORKDIR}/${PKG}/${PKG} usr/local/bin/.
+  cp ${WORKDIR}/${PKG}-asm/${PKG} usr/local/bin/.
+  cp ${WORKDIR}/${PKG}-pas/src/mp usr/local/bin/.
+
+  mkdir -p usr/local/share/mads
+  cp -R ${WORKDIR}/${PKG}-pas/{base,lib,blibs,dlibs} usr/local/share/mads/.
+  for f in usr/local/share/mads/*/*.pas \
+    ; do name=$(basename "$f" .pas) \
+    ; ln -s "$(basename $f)" "$(dirname "$f")/${name^^}.pas" \
+  ; done
 
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
-  echo Version: "2.1.7-${MADS_VERSION}" >> DEBIAN/control
+  echo Version: "2.1.7-${MADSASM_VERSION}" >> DEBIAN/control
   echo Maintainer: ${MAINTAINER} >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
