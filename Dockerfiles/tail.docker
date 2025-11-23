@@ -4,7 +4,7 @@ RUN <<EOF
   apt-get install -y --no-install-recommends /tmp/packages/*.deb
 EOF
 
-# Essential tools
+# Essential tools and libraries
 RUN <<EOF
   set -e
 
@@ -15,6 +15,7 @@ RUN <<EOF
     file \
     jq \
     less \
+    libz-dev \
     sudo \
     unzip \
     wget \
