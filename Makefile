@@ -65,25 +65,23 @@ manifest:
 	    */) ;; \
 	    *) echo "Error: NAMESPACE must end with a slash." >&2 ; exit 1 ;; \
 	esac
-	DOCKER_API="https://registry.hub.docker.com/v2/repositories/" ; \
-	ARCHS=$$(curl -s "$${DOCKER_API}$(NAMESPACE)$(IMAGE)/tags?page_size=100" \
-	    | jq -r '.results[].name' | sed -n '/^$(TAG)-/s/.*-//p') ; \
-	if [ -z "$${ARCHS}" ] ; then \
-	    echo "No existing archs for $(TAG)" ; \
-	    exit 1 ; \
-	fi ; \
-	ARGS="$(NAMESPACE)$(IMAGE):$(TAG)" ; \
-	for arch in $${ARCHS} ; do \
-	    ARGS="$${ARGS} --amend $(NAMESPACE)$(IMAGE):$(TAG)-$${arch}" ; \
-	done ; \
-	docker manifest create $${ARGS} ; \
-	docker manifest push $(NAMESPACE)$(IMAGE):$(TAG) ; \
-	ARGS="$(NAMESPACE)$(IMAGE):latest" ; \
-	for arch in $${ARCHS} ; do \
-	    ARGS="$${ARGS} --amend $(NAMESPACE)$(IMAGE):latest-$${arch}" ; \
-	done ; \
-	docker manifest create $${ARGS} ; \
-	docker manifest push $(NAMESPACE)$(IMAGE):latest ; \
+	@create_manifest() { \
+		TAG_NAME=$$1 ; \
+		DOCKER_API="https://registry.hub.docker.com/v2/repositories/" ; \
+		ARCHS=$$(curl -s "$${DOCKER_API}$(NAMESPACE)$(IMAGE)/tags?page_size=100" \
+			| jq -r '.results[].name' | sed -n '/^$(TAG)-/s/.*-//p') ; \
+		if [ -z "$${ARCHS}" ] ; then \
+			echo "No existing archs for $(TAG)" ; \
+			exit 1 ; \
+		fi ; \
+		ARGS="" ; \
+		for arch in $${ARCHS} ; do \
+			ARGS="$${ARGS} $(NAMESPACE)$(IMAGE):$${TAG_NAME}-$${arch}" ; \
+		done ; \
+		docker buildx imagetools create -t $(NAMESPACE)$(IMAGE):$${TAG_NAME} $${ARGS} ; \
+	} ; \
+	create_manifest $(TAG) ; \
+	create_manifest latest
 
 # To force a complete clean build, do:
 #   make rebuild
