@@ -1,0 +1,43 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS atari-tools
+
+ARG MAINTAINER
+
+RUN rm -rf /usr/local/*
+
+# For dir2atr
+ARG ATARITOOLS_VERSION
+RUN <<EOF
+  set -e
+
+  cd /tmp
+  git clone https://github.com/jhallen/atari-tools.git
+  cd atari-tools
+  git checkout ${ATARITOOLS_VERSION}
+  make
+  mkdir -p /usr/local/bin
+  cp atr /usr/local/bin/.
+EOF
+
+# Convert installed atari-tools into a deb
+RUN <<EOF
+  set -e
+
+  PKG=atari-tools
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local/bin
+  cp -R /usr/local/bin/. usr/local/bin/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "1-${ATARITOOLS_VERSION}" >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF
