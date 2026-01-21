@@ -37,6 +37,9 @@ Dockerfiles for details.)
 
 ---
 
+## Install/Preparation
+Before you can use defoogi as a command, you will want to grab the `start` script from here and rename it `defoogi` and put it in your path somewhere.
+
 ## Usage
 
 1. Change into the directory containing the software you want to build
