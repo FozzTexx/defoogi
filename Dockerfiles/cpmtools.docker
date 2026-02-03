@@ -1,0 +1,70 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS cpmtools
+
+ARG MAINTAINER
+
+RUN rm -rf /usr/local/*
+
+ARG CPMTOOLS_VERSION
+ADD https://www.moria.de/~michael/cpmtools/files/cpmtools-${CPMTOOLS_VERSION}.tar.gz .
+
+RUN <<EOF
+  set -e
+  tar -xf cpmtools-${CPMTOOLS_VERSION}.tar.gz
+  cd cpmtools-${CPMTOOLS_VERSION}
+  ./configure --prefix=/usr/local
+  make all
+  make install
+
+  cat > /usr/local/share/diskdefs << ADAMEOF
+diskdef coleco-adam
+  seclen 512
+  tracks 40
+  sectrk 8
+  blocksize 1024
+  maxdir 64
+  skew 5
+  boottrk 0
+  bootsec 26
+  offset 0
+  os 2.2
+end
+
+diskdef coleco-adam-3.5
+  seclen 512
+  tracks 160
+  sectrk 9
+  blocksize 2048
+  maxdir 112
+  skew 5
+  boottrk 0
+  bootsec 26
+  offset 0
+  os 2.2
+end
+ADAMEOF
+
+EOF
+
+# Convert installed cpmtools into a deb
+RUN <<EOF
+  set -e
+
+  PKG=cpmtools
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local
+  cp -R /usr/local/. usr/local/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "1-${CPMTOOLS_VERSION}" >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF
