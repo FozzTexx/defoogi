@@ -1,0 +1,45 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS nasm 
+
+ARG MAINTAINER
+
+RUN rm -rf /usr/local/*
+
+# For dir2atr
+ARG NASM_VERSION
+RUN <<EOF
+  set -e
+
+  cd /tmp
+  git clone https://github.com/netwide-assembler/nasm.git
+  cd nasm
+  git checkout ${NASM_VERSION}
+  ./autogen.sh
+  ./configure
+  make
+  mkdir -p /usr/local/bin
+  cp nasm /usr/local/bin/.
+EOF
+
+# Convert installed nasm into a deb
+RUN <<EOF
+  set -e
+
+  PKG=nasm
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local/bin
+  cp -R /usr/local/bin/. usr/local/bin/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "1-${NASM_VERSION}" >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF
