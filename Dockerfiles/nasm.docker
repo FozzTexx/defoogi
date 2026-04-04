@@ -6,7 +6,6 @@ ARG MAINTAINER
 
 RUN rm -rf /usr/local/*
 
-# For dir2atr
 ARG NASM_VERSION
 RUN <<EOF
   set -e
