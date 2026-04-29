@@ -26,6 +26,20 @@ DCKARGS="--privileged -v /dev:/dev --cap-add=SYS_ADMIN --cap-add SYS_PTRACE"
 # Always pass X11
 DCKARGS="${DCKARGS} -e DISPLAY -v ${HOME}/.Xauthority:/home/${WSUSER}/.Xauthority --net=host"
 
+# Get offset in hours (e.g., -08 for PST, +01 for CET)
+RAW_OFFSET=$(date +%H | awk '{print int($1)}')
+
+# Correct POSIX format: Invert the sign and remove leading zeros
+# Note: POSIX TZ uses + for West of GMT and - for East of GMT
+TZ_RAW=$(date +%z | awk '{
+    sign = substr($1, 1, 1);
+    hours = int(substr($1, 2, 2));
+    if (sign == "+") printf "GMT-%d", hours;
+    else printf "GMT+%d", hours;
+}')
+
+DCKARGS="${DCKARGS} -e TZ=$TZ_RAW"
+
 DAEMON=0
 
 while [ $# -gt 0 ]; do

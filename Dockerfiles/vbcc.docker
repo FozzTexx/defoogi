@@ -1,0 +1,82 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS vbcc
+ENV DEBIAN_FRONTEND=noninteractive
+
+ARG MAINTAINER
+ARG PKG=vbcc
+ARG VBCC_VERSION=2025.2.22
+ARG VASM_VERSION
+ARG VLINK_VERSION
+ARG VBCC_PREFIX=/opt/vbcc
+ARG VBCC_URL=http://www.ibaug.de/vbcc/vbcc.tar.gz
+ARG VASM_URL=http://phoenix.owl.de/tags/vasm${VASM_VERSION}.tar.gz
+ARG VLINK_URL=http://phoenix.owl.de/tags/vlink${VLINK_VERISON}.tar.gz
+WORKDIR /${PKG}-build
+
+ADD ${VBCC_URL} .
+ADD ${VASM_URL} .
+ADD ${VLINK_URL} .
+ADD http://www.ibaug.de/vbcc/vbcc65816.zip .
+RUN <<EOF
+  set -e
+
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    unzip \
+  ;
+
+  tar -xf vasm*.tar.gz
+  tar -xf vlink*.tar.gz
+  tar -xf vbcc*tar.gz
+  unzip vbcc65816.zip
+EOF
+
+RUN <<EOF
+  set -e
+  WORKDIR=${PWD}
+  mkdir -p ${VBCC_PREFIX}
+
+  cd ${WORKDIR}/${PKG}
+  yes '' | make TARGET=65816
+  cp -R bin ${VBCC_PREFIX}/
+  cd ${WORKDIR}/vbcc65816/vbcc65816_linux/vbcc
+  cp -R config targets ${VBCC_PREFIX}/
+
+  cd ${WORKDIR}/vasm
+  make CPU=6502 SYNTAX=oldstyle
+  cp vasm6502_oldstyle ${VBCC_PREFIX}/bin/.
+
+  cd ${WORKDIR}/vlink
+  make
+  cp vlink ${VBCC_PREFIX}/bin/.
+EOF
+
+RUN <<EOF
+  set -e
+  export VBCC=${VBCC_PREFIX}
+  export PATH=${PATH}:${VBCC}/bin
+  echo 'int main() {printf("hello world\\n");}' > hello.c
+  vc +iigs hello.c
+EOF
+
+RUN <<EOF
+  set -e
+
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p ./${VBCC_PREFIX}
+  cp -R ${VBCC_PREFIX}/. ./${VBCC_PREFIX}/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "${VBCC_VERSION}" >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Depends: m4 >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF
