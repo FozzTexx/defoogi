@@ -29,7 +29,7 @@ RUN <<EOF
 
   mkdir DEBIAN
   echo Package: "${PKG}" >> DEBIAN/control
-  echo Version: "${CC65_VERSION}" >> DEBIAN/control
+  echo Version: "2.20-${CC65_VERSION}" >> DEBIAN/control
   echo Maintainer: ${MAINTAINER} >> DEBIAN/control
   echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
   echo Description: "${PKG}" >> DEBIAN/control
