@@ -16,13 +16,12 @@ RUN <<EOF
   apt-get update
   apt-get install -y --no-install-recommends \
     cmake \
-    libfltk1.3-dev \
-    libgl-dev \
-    libglx-dev \
     ;
 
   git clone -b ${DRAGONDOS_VERSION} https://github.com/robcfg/retrotools.git
   cd retrotools/dragondos
+  sed -i -E '/find_package\(fltk/Id; /find_package\(opengl/Id; /add_executable\(dragondosui/Id; /target_link_libraries\(dragondosui/Id; /install\(targets dragondosui/Id' CMakeLists.txt
+
   cmake -DCMAKE_BUILD_TYPE=Release -B build -S .
   make -C build dragondos
   ls -Fla build/dragondos
