@@ -14,6 +14,11 @@ ARG LWTOOLS_VERSION
 ADD http://www.lwtools.ca/releases/lwtools/lwtools-${LWTOOLS_VERSION}.tar.gz .
 RUN <<EOF
   set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    bison \
+    ;
+
   tar -xf lwtools-${LWTOOLS_VERSION}.tar.gz
   cd lwtools-${LWTOOLS_VERSION}
   make
