@@ -1,5 +1,5 @@
 IMAGE = defoogi
-TAG = 1.4.6
+TAG = 1.4.7
 MAINTAINER=fozztexx@fozztexx.com
 
 WSUSER = wario

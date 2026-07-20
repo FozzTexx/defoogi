@@ -1,0 +1,51 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS dragondos
+ENV DEBIAN_FRONTEND=noninteractive
+
+ARG MAINTAINER
+ARG PKG=dragondos
+
+WORKDIR /${PKG}-build
+
+RUN rm -rf /usr/local/*
+
+ARG DRAGONDOS_VERSION
+RUN <<EOF
+  set -e
+  apt-get update
+  apt-get install -y --no-install-recommends \
+    cmake \
+    libfltk1.3-dev \
+    libgl-dev \
+    libglx-dev \
+    ;
+
+  git clone -b ${DRAGONDOS_VERSION} https://github.com/robcfg/retrotools.git
+  cd retrotools/dragondos
+  cmake -DCMAKE_BUILD_TYPE=Release -B build -S .
+  make -C build dragondos
+  ls -Fla build/dragondos
+  mkdir -p /usr/local/bin
+  cp build/dragondos /usr/local/bin/.
+EOF
+
+RUN <<EOF
+  set -e
+
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local/bin
+  cp -R /usr/local/. usr/local/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "${DRAGONDOS_VERSION##*v}" >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF
