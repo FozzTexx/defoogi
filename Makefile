@@ -1,5 +1,6 @@
 IMAGE = defoogi
-TAG = 1.4.7
+GIT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+TAG := $(patsubst v%,%,$(GIT_TAG))
 MAINTAINER=fozztexx@fozztexx.com
 
 WSUSER = wario
@@ -42,7 +43,9 @@ install: $(PREFIX)/bin/$(COMMAND)
 $(PREFIX)/bin/$(COMMAND): start
 	cp start $(PREFIX)/bin/$(COMMAND)
 
-multi-arch:
+.PHONY: check-tag check-namespace
+
+check-namespace:
 	@if [ -z "$(NAMESPACE)" ] ; then \
 	    echo "Error: must include NAMESPACE=" ; \
 	    exit 1 ; \
@@ -51,20 +54,22 @@ multi-arch:
 	    */) ;; \
 	    *) echo "Error: NAMESPACE must end with a slash." >&2 ; exit 1 ;; \
 	esac
+
+check-tag:
+	@echo "Checking if $(IMAGE):$(TAG) already exists on Docker Hub..."
+	@if docker manifest inspect $(NAMESPACE)/$(IMAGE):$(TAG) > /dev/null 2>&1; then \
+		echo "Error: Tag '$(TAG)' already exists! Aborting push to prevent overwrite."; \
+		exit 1; \
+	fi
+
+multi-arch: check-namespace check-tag
+	echo TAG=$(TAG)
 	export TAG_ARCH="-$$(docker version --format '{{.Server.Arch}}')" \
 	&& make IMAGE=$(NAMESPACE)$(IMAGE) \
 	&& docker push $(NAMESPACE)$(IMAGE):$(TAG)$${TAG_ARCH} \
 	&& docker push $(NAMESPACE)$(IMAGE):latest$${TAG_ARCH}
 
-manifest:
-	@if [ -z "$(NAMESPACE)" ] ; then \
-	    echo "Error: must include NAMESPACE=" ; \
-	    exit 1 ; \
-	fi
-	@case "$(NAMESPACE)" in \
-	    */) ;; \
-	    *) echo "Error: NAMESPACE must end with a slash." >&2 ; exit 1 ;; \
-	esac
+manifest: check-namespace check-tag
 	@create_manifest() { \
 		TAG_NAME=$$1 ; \
 		DOCKER_API="https://registry.hub.docker.com/v2/repositories/" ; \
