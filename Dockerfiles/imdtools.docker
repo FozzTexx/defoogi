@@ -1,0 +1,56 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS imdtools
+
+ARG MAINTAINER
+ARG IMD2RAW_VERSION
+ARG RAW2IMD_VERSION
+ARG PKG=imdtools
+WORKDIR /${PKG}-build
+
+ARG IMD2RAW_REPO=https://github.com/RetroFloppy/imd2raw.git
+ARG RAW2IMD_REPO=https://github.com/durgadas311/raw2imd.git
+
+RUN rm -rf /usr/local/*
+
+RUN <<EOF
+  set -e
+  git clone ${IMD2RAW_REPO}
+  cd imd2raw
+  git checkout ${IMD2RAW_VERSION}
+  make
+  mkdir -p /usr/local/bin
+  cp imd2raw /usr/local/bin/.
+EOF
+
+RUN <<EOF
+  set -e
+  git clone ${RAW2IMD_REPO}
+  cd raw2imd
+  git checkout ${RAW2IMD_VERSION}
+  git submodule init
+  git submodule update
+  make
+  mkdir -p /usr/local/bin
+  cp raw2imd imdcat /usr/local/bin/.
+EOF
+
+RUN <<EOF
+  set -e
+
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local/bin
+  cp -R /usr/local/. usr/local/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "1.0" >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF

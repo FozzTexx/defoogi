@@ -17,7 +17,7 @@ RUN <<EOF
   make all
   make install
 
-  cat > /usr/local/share/diskdefs << ADAMEOF
+  cat > /usr/local/share/diskdefs << DISKDEFEOF
 diskdef coleco-adam
   seclen 512
   tracks 40
@@ -43,8 +43,30 @@ diskdef coleco-adam-3.5
   offset 0
   os 2.2
 end
-ADAMEOF
 
+diskdef trs6
+  seclen 512
+  tracks 76
+  sectrk 16
+  blocksize 2048
+  maxdir 128
+  skew 1
+  boottrk 1
+  offset 3328
+  os 2.2
+end
+
+diskdef ibm-3740
+  seclen 128
+  tracks 77
+  sectrk 26
+  blocksize 1024
+  maxdir 64
+  skew 6
+  boottrk 2
+  os 2.2
+end
+DISKDEFEOF
 EOF
 
 # Convert installed cpmtools into a deb

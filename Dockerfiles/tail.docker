@@ -15,6 +15,7 @@ RUN <<EOF
     file \
     jq \
     less \
+    libdsk-utils \
     libz-dev \
     mtools \
     nasm \
@@ -25,6 +26,29 @@ RUN <<EOF
     zip \
     ;
   rm -rf /var/lib/apt/lists/*
+
+  LIBDSKDIR=/usr/share/LibDsk
+  mkdir -p ${LIBDSKDIR}
+  cat >> ${LIBDSKDIR}/libdskrc << DISKDEFEOF
+[pt-flat]
+description = Uniformized P&T Double-Density Target (77 Cylinders, 16 Sectors, 512 Bytes)
+cylinders = 77
+heads = 1
+sectors = 16
+secbase = 1
+secsize = 512
+datarate = DD
+
+[ibm-3740]
+description = IBM 3740 SSSD 8-Inch Standard
+cylinders = 77
+heads = 1
+sectors = 26
+secbase = 1
+secsize = 128
+datarate = SD
+fm = yes
+DISKDEFEOF
 EOF
 
 ENV WATCOM=/opt/watcom
