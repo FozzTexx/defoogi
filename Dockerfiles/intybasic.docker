@@ -1,0 +1,59 @@
+# -*- mode: Fundamental; indent-tabs-mode: nil -*-
+
+FROM tooling AS intybasic
+
+ARG MAINTAINER
+
+RUN rm -rf /usr/local/*
+
+# IntyBASIC compiler and its stock library files
+ARG INTYBASIC_VERSION
+RUN <<EOF
+  set -e
+
+  cd /tmp
+  git clone https://github.com/nanochess/IntyBASIC.git
+  cd IntyBASIC
+  git checkout ${INTYBASIC_VERSION}
+  cd intybasic
+  make
+  mkdir -p /usr/local/bin /usr/local/share/intybasic
+  cp intybasic /usr/local/bin/.
+  cp intybasic_prologue.asm intybasic_epilogue.asm manual.txt \
+    /usr/local/share/intybasic/.
+EOF
+
+# as1600 assembler from jzIntv, used to turn IntyBASIC output into a ROM
+ARG JZINTV_VERSION
+RUN <<EOF
+  set -e
+
+  cd /tmp
+  git clone https://github.com/FujiNetWIFI/jzintv.git
+  cd jzintv/src
+  git checkout ${JZINTV_VERSION}
+  make ../bin/as1600 SDL2_CFLAGS= SDL2_LFLAGS=
+  cp ../bin/as1600 /usr/local/bin/.
+EOF
+
+# Convert installed intybasic into a deb
+RUN <<EOF
+  set -e
+
+  PKG=intybasic
+  PKG_ROOT="/tmp/${PKG}"
+  mkdir -p "${PKG_ROOT}"
+  cd "${PKG_ROOT}"
+  mkdir -p usr/local
+  cp -R /usr/local/. usr/local/.
+
+  mkdir DEBIAN
+  echo Package: "${PKG}" >> DEBIAN/control
+  echo Version: "1-${INTYBASIC_VERSION}" >> DEBIAN/control
+  echo Maintainer: ${MAINTAINER} >> DEBIAN/control
+  echo Architecture: "$(dpkg-architecture -q DEB_HOST_ARCH)" >> DEBIAN/control
+  echo Description: "${PKG}" >> DEBIAN/control
+
+  cd ..
+  dpkg-deb --build "${PKG_ROOT}"
+EOF
